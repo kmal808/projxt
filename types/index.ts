@@ -34,14 +34,19 @@ export type Project = {
   budget: number;
   location: string;
   tasks?: Task[];
-  documents?: {
-    id: string;
-    name: string;
-    type: string;
-    url: string;
-    uploadedBy: string;
-    uploadedAt: string;
-  }[];
+  documents?: ProjectDocument[];
+};
+
+export type ProjectDocument = {
+  id: string;
+  name: string;
+  type: string;
+  size: number;
+  uri: string;
+  uploadedBy: string;
+  uploadedAt: string;
+  folder?: string;
+  tags?: string[];
 };
 
 export type PayrollEntry = {

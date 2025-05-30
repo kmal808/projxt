@@ -4,7 +4,7 @@ import { Platform } from "react-native";
 import Colors from "@/constants/colors";
 import { useAuthStore } from "@/store/auth-store";
 import { useThemeStore } from "@/store/theme-store";
-import { Home, Users, Clipboard, Package, Settings, BarChart3 } from "lucide-react-native";
+import { Home, Users, Clipboard, Package, Settings, FolderOpen } from "lucide-react-native";
 
 export default function TabLayout() {
   const user = useAuthStore((state) => state.user);
@@ -65,10 +65,10 @@ export default function TabLayout() {
       
       {(isAdmin || isOffice || !user) && (
         <Tabs.Screen
-          name="reports"
+          name="files"
           options={{
-            title: "Reports",
-            tabBarIcon: ({ color, size }) => <BarChart3 size={size} color={color} />,
+            title: "Files",
+            tabBarIcon: ({ color, size }) => <FolderOpen size={size} color={color} />,
           }}
         />
       )}
