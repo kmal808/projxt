@@ -1,0 +1,93 @@
+import FontAwesome from "@expo/vector-icons/FontAwesome";
+import { useFonts } from "expo-font";
+import { Stack } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
+import { useEffect } from "react";
+import { Platform, Text, View, useColorScheme, Appearance } from "react-native";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { trpc, trpcClient } from "@/lib/trpc";
+import { useThemeStore } from "@/store/theme-store";
+
+import { ErrorBoundary } from "./error-boundary";
+
+export const unstable_settings = {
+  // Ensure that reloading on `/modal` keeps a back button present.
+  initialRouteName: "index",
+};
+
+// Create a client for React Query
+const queryClient = new QueryClient();
+
+// Prevent the splash screen from auto-hiding before asset loading is complete.
+SplashScreen.preventAutoHideAsync().catch(err => {
+  console.warn("Error preventing splash screen auto hide:", err);
+});
+
+export default function RootLayout() {
+  const [loaded, error] = useFonts({
+    ...FontAwesome.font,
+  });
+  
+  // Initialize theme listener
+  const systemColorScheme = useColorScheme();
+  const { mode, setMode, isDarkMode } = useThemeStore();
+  
+  // Update theme based on system changes if in system mode
+  useEffect(() => {
+    if (mode === 'system' && systemColorScheme) {
+      useThemeStore.setState({ isDarkMode: systemColorScheme === 'dark' });
+    }
+  }, [systemColorScheme, mode]);
+
+  useEffect(() => {
+    if (error) {
+      console.error("Error loading fonts:", error);
+    }
+  }, [error]);
+
+  useEffect(() => {
+    if (loaded) {
+      SplashScreen.hideAsync().catch(err => {
+        console.warn("Error hiding splash screen:", err);
+      });
+    }
+  }, [loaded]);
+
+  if (!loaded) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <Text>Loading app resources...</Text>
+      </View>
+    );
+  }
+
+  return (
+    <ErrorBoundary>
+      <trpc.Provider client={trpcClient} queryClient={queryClient}>
+        <QueryClientProvider client={queryClient}>
+          <RootLayoutNav />
+        </QueryClientProvider>
+      </trpc.Provider>
+    </ErrorBoundary>
+  );
+}
+
+function RootLayoutNav() {
+  return (
+    <Stack
+      screenOptions={{
+        headerShown: false,
+      }}
+    >
+      <Stack.Screen name="index" options={{ headerShown: false }} />
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen name="profile" options={{ headerShown: true, title: "Profile" }} />
+      <Stack.Screen name="project/[id]" options={{ headerShown: true, title: "Project Details" }} />
+      <Stack.Screen name="crew/[id]" options={{ headerShown: true, title: "Crew Details" }} />
+      <Stack.Screen name="payroll" options={{ headerShown: true, title: "Payroll Calculator" }} />
+      <Stack.Screen name="inventory" options={{ headerShown: true, title: "Inventory Management" }} />
+      <Stack.Screen name="configurator" options={{ headerShown: true, title: "Product Configurator" }} />
+      <Stack.Screen name="privacy-security" options={{ headerShown: false, title: "Privacy & Security" }} />
+    </Stack>
+  );
+}
