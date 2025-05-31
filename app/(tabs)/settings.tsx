@@ -51,13 +51,13 @@ export default function SettingsScreen() {
   };
   
   const openHelpSupport = () => {
-    // In a real app, this would open TestFlight feedback or support email
-    const testFlightUrl = 'https://testflight.apple.com/join/yourAppId';
+    // TODO open TestFlight feedback or support email
+    const testFlightUrl = 'https://testflight.apple.com/join/projext';
     
     if (Platform.OS === 'web') {
       Alert.alert(
         'Help & Support',
-        'Please contact support@projxt.com for assistance.',
+        'Please contact support@projext.com for assistance.',
         [{ text: 'OK' }]
       );
     } else {
@@ -69,14 +69,14 @@ export default function SettingsScreen() {
           { 
             text: 'TestFlight', 
             onPress: () => {
-              // In a real app, this would use Linking to open TestFlight
+              // TODO use Linking to open TestFlight
               Alert.alert('TestFlight', 'Opening TestFlight feedback...');
             }
           },
           { 
             text: 'Email Support', 
             onPress: () => {
-              // In a real app, this would use Linking to open email
+              // TODO use Linking to open email
               Alert.alert('Email', 'Opening email to support@projxt.com...');
             }
           }
