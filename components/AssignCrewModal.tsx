@@ -10,14 +10,13 @@ import {
   KeyboardAvoidingView,
   FlatList
 } from 'react-native';
-import { useCrewsStore } from '@/store/crews-store';
 import { useProjectsStore } from '@/store/projects-store';
+import { useCrewsStore } from '@/store/crews-store';
 import Button from './ui/Button';
 import Card from './ui/Card';
-import Avatar from './ui/Avatar';
 import Colors from '@/constants/colors';
 import { X, Check, Users } from 'lucide-react-native';
-import { Crew, Project } from '@/types';
+import { Project, Crew } from '@/types';
 
 interface AssignCrewModalProps {
   visible: boolean;
@@ -26,8 +25,8 @@ interface AssignCrewModalProps {
 }
 
 export default function AssignCrewModal({ visible, onClose, project }: AssignCrewModalProps) {
-  const { crews, fetchCrews, assignProjectToCrew } = useCrewsStore();
-  const { updateProject } = useProjectsStore();
+  const { assignCrewToProject } = useProjectsStore();
+  const { crews, fetchCrews } = useCrewsStore();
   
   const [selectedCrews, setSelectedCrews] = useState<string[]>([]);
   const [availableCrews, setAvailableCrews] = useState<Crew[]>([]);
@@ -41,13 +40,14 @@ export default function AssignCrewModal({ visible, onClose, project }: AssignCre
   
   useEffect(() => {
     if (project && crews.length > 0) {
-      // Initialize selected crews from project
-      setSelectedCrews([...project.crews]);
-      
-      // Get all available crews
-      setAvailableCrews(crews);
+      // Filter out crews that are already assigned to this project
+      const unassignedCrews = crews.filter(
+        crew => !project.crews.includes(crew.id)
+      );
+      setAvailableCrews(unassignedCrews);
+      setSelectedCrews([]);
     }
-  }, [project, crews, visible]);
+  }, [project, crews]);
   
   const toggleCrewSelection = (crewId: string) => {
     setSelectedCrews(prev => {
@@ -60,31 +60,23 @@ export default function AssignCrewModal({ visible, onClose, project }: AssignCre
   };
   
   const handleSubmit = () => {
-    if (!project) return;
+    if (!project || selectedCrews.length === 0) return;
     
     setIsSubmitting(true);
     
-    // Update project with selected crews
-    updateProject(project.id, { crews: selectedCrews });
-    
-    // Assign project to each selected crew
+    // Assign selected crews to project
     selectedCrews.forEach(crewId => {
-      // Only assign if not already assigned
-      if (!project.crews.includes(crewId)) {
-        assignProjectToCrew(crewId, project.id);
-      }
+      assignCrewToProject(project.id, crewId);
     });
     
-    // Close modal
+    // Reset and close modal
+    setSelectedCrews([]);
     onClose();
     setIsSubmitting(false);
   };
   
   const handleClose = () => {
-    // Reset to original project crews when canceling
-    if (project) {
-      setSelectedCrews([...project.crews]);
-    }
+    setSelectedCrews([]);
     onClose();
   };
   
@@ -103,23 +95,9 @@ export default function AssignCrewModal({ visible, onClose, project }: AssignCre
           <View style={styles.crewItemContent}>
             <View style={styles.crewInfo}>
               <Text style={styles.crewName}>{item.name}</Text>
-              <View style={styles.crewMembers}>
-                {item.members.slice(0, 3).map((member, index) => (
-                  <View key={member.id} style={[styles.crewMemberAvatar, { zIndex: 10 - index }]}>
-                    <Avatar 
-                      name={member.name} 
-                      size={24} 
-                      imageUrl={member.avatar}
-                    />
-                  </View>
-                ))}
-                
-                {item.members.length > 3 && (
-                  <View style={styles.moreMembersContainer}>
-                    <Text style={styles.moreMembers}>+{item.members.length - 3}</Text>
-                  </View>
-                )}
-              </View>
+              <Text style={styles.crewMemberCount}>
+                {item.members.length} member{item.members.length !== 1 ? 's' : ''}
+              </Text>
             </View>
             
             {isSelected && (
@@ -160,7 +138,7 @@ export default function AssignCrewModal({ visible, onClose, project }: AssignCre
             {availableCrews.length > 0 ? (
               <>
                 <Text style={styles.subtitle}>
-                  Select crews to assign to this project
+                  Select crews to assign to {project?.name}
                 </Text>
                 
                 <FlatList
@@ -181,10 +159,10 @@ export default function AssignCrewModal({ visible, onClose, project }: AssignCre
               <View style={styles.emptyState}>
                 <Users size={40} color={Colors.textLight} />
                 <Text style={styles.emptyStateText}>
-                  No crews available
+                  No available crews to assign
                 </Text>
                 <Text style={styles.emptyStateSubtext}>
-                  No crews exist in the system. Create crews first.
+                  All crews are already assigned to this project or no crews exist.
                 </Text>
               </View>
             )}
@@ -200,7 +178,7 @@ export default function AssignCrewModal({ visible, onClose, project }: AssignCre
                 title="Assign Crews"
                 onPress={handleSubmit}
                 loading={isSubmitting}
-                disabled={availableCrews.length === 0}
+                disabled={selectedCrews.length === 0}
                 style={styles.button}
               />
             </View>
@@ -283,32 +261,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
     color: Colors.text,
-    marginBottom: 8,
+    marginBottom: 4,
   },
-  crewMembers: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  crewMemberAvatar: {
-    marginLeft: -8,
-    borderWidth: 2,
-    borderColor: Colors.card,
-    borderRadius: 12,
-  },
-  moreMembersContainer: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: Colors.background,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginLeft: 4,
-    borderWidth: 2,
-    borderColor: Colors.card,
-  },
-  moreMembers: {
-    fontSize: 10,
-    fontWeight: 'bold',
+  crewMemberCount: {
+    fontSize: 12,
     color: Colors.textLight,
   },
   checkIconContainer: {

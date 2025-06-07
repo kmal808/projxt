@@ -5,7 +5,6 @@ import {
   StyleSheet, 
   Modal, 
   TouchableOpacity, 
-  ScrollView,
   TouchableWithoutFeedback,
   Platform,
   KeyboardAvoidingView,
@@ -15,10 +14,10 @@ import { useProjectsStore } from '@/store/projects-store';
 import Input from './ui/Input';
 import Button from './ui/Button';
 import Colors from '@/constants/colors';
-import { X, FileText, Tag, User, Upload } from 'lucide-react-native';
-import { ProjectDocument } from '@/types';
-import { useAuthStore } from '@/store/auth-store';
+import { X, FileText, Upload } from 'lucide-react-native';
 import * as DocumentPicker from 'expo-document-picker';
+import * as FileSystem from 'expo-file-system';
+import { ProjectDocument } from '@/types';
 
 interface AddDocumentModalProps {
   visible: boolean;
@@ -28,14 +27,10 @@ interface AddDocumentModalProps {
 
 export default function AddDocumentModal({ visible, onClose, projectId }: AddDocumentModalProps) {
   const { addDocumentToProject } = useProjectsStore();
-  const { user } = useAuthStore();
   
-  const [name, setName] = useState('');
-  const [type, setType] = useState('');
-  const [tags, setTags] = useState('');
-  const [folder, setFolder] = useState('');
+  const [documentName, setDocumentName] = useState('');
+  const [documentType, setDocumentType] = useState('');
   const [selectedFile, setSelectedFile] = useState<DocumentPicker.DocumentPickerAsset | null>(null);
-  
   const [errors, setErrors] = useState<{[key: string]: string}>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   
@@ -50,47 +45,34 @@ export default function AddDocumentModal({ visible, onClose, projectId }: AddDoc
         return;
       }
       
-      setSelectedFile(result.assets[0]);
+      const file = result.assets[0];
+      setSelectedFile(file);
       
-      // Auto-fill name if empty
-      if (!name) {
-        setName(result.assets[0].name);
+      // Auto-fill name and type if not already filled
+      if (!documentName) {
+        setDocumentName(file.name);
       }
       
-      // Auto-detect type from file extension
-      if (!type) {
-        const fileExtension = result.assets[0].name.split('.').pop()?.toLowerCase();
-        if (fileExtension) {
-          if (['jpg', 'jpeg', 'png', 'gif'].includes(fileExtension)) {
-            setType('Image');
-          } else if (['pdf'].includes(fileExtension)) {
-            setType('PDF Document');
-          } else if (['doc', 'docx'].includes(fileExtension)) {
-            setType('Word Document');
-          } else if (['xls', 'xlsx'].includes(fileExtension)) {
-            setType('Spreadsheet');
-          } else if (['ppt', 'pptx'].includes(fileExtension)) {
-            setType('Presentation');
-          } else {
-            setType(fileExtension.toUpperCase());
-          }
-        }
+      if (!documentType) {
+        // Extract file extension
+        const fileExtension = file.name.split('.').pop()?.toUpperCase() || '';
+        setDocumentType(fileExtension);
       }
     } catch (error) {
       console.error('Error picking document:', error);
-      Alert.alert('Error', 'Failed to pick document. Please try again.');
+      Alert.alert('Error', 'Failed to pick document');
     }
   };
   
   const validateForm = () => {
     const newErrors: {[key: string]: string} = {};
     
-    if (!name.trim()) {
-      newErrors.name = 'Document name is required';
+    if (!documentName.trim()) {
+      newErrors.documentName = 'Document name is required';
     }
     
-    if (!type.trim()) {
-      newErrors.type = 'Document type is required';
+    if (!documentType.trim()) {
+      newErrors.documentType = 'Document type is required';
     }
     
     if (!selectedFile) {
@@ -101,38 +83,43 @@ export default function AddDocumentModal({ visible, onClose, projectId }: AddDoc
     return Object.keys(newErrors).length === 0;
   };
   
-  const handleSubmit = () => {
-    if (!validateForm() || !user) return;
+  const handleSubmit = async () => {
+    if (!validateForm()) return;
     
     setIsSubmitting(true);
     
-    // Create new document object
-    const newDocument: ProjectDocument = {
-      id: `doc-${Date.now()}`,
-      name,
-      type,
-      size: selectedFile?.size || 0,
-      uri: selectedFile?.uri || '',
-      uploadedBy: user.name,
-      uploadedAt: new Date().toISOString(),
-      folder: folder || undefined,
-      tags: tags ? tags.split(',').map(tag => tag.trim()) : undefined,
-    };
-    
-    // Add document to project
-    addDocumentToProject(projectId, newDocument);
-    
-    // Reset form and close modal
-    resetForm();
-    onClose();
-    setIsSubmitting(false);
+    try {
+      // In a real app, you would upload the file to a server
+      // For this demo, we'll just use the file URI
+      
+      // Create new document object
+      const newDocument: ProjectDocument = {
+        id: `doc-${Date.now()}`,
+        name: documentName,
+        type: documentType,
+        uri: selectedFile?.uri || '',
+        size: selectedFile?.size || 0,
+        uploadedBy: 'Current User',
+        uploadedAt: new Date().toISOString(),
+      };
+      
+      // Add document to project
+      addDocumentToProject(projectId, newDocument);
+      
+      // Reset form and close modal
+      resetForm();
+      onClose();
+    } catch (error) {
+      console.error('Error adding document:', error);
+      Alert.alert('Error', 'Failed to add document');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
   
   const resetForm = () => {
-    setName('');
-    setType('');
-    setTags('');
-    setFolder('');
+    setDocumentName('');
+    setDocumentType('');
     setSelectedFile(null);
     setErrors({});
   };
@@ -140,14 +127,6 @@ export default function AddDocumentModal({ visible, onClose, projectId }: AddDoc
   const handleClose = () => {
     resetForm();
     onClose();
-  };
-  
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
   
   return (
@@ -167,79 +146,42 @@ export default function AddDocumentModal({ visible, onClose, projectId }: AddDoc
       >
         <View style={styles.modalContainer}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Upload Document</Text>
+            <Text style={styles.modalTitle}>Add Document</Text>
             <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
               <X size={20} color={Colors.text} />
             </TouchableOpacity>
           </View>
           
-          <ScrollView style={styles.modalContent}>
+          <View style={styles.modalContent}>
             <TouchableOpacity 
-              style={styles.filePickerButton} 
+              style={styles.uploadContainer}
               onPress={pickDocument}
             >
-              <Upload size={24} color={Colors.primary} />
-              <Text style={styles.filePickerText}>
-                {selectedFile ? 'Change File' : 'Select File'}
-              </Text>
-            </TouchableOpacity>
-            
-            {selectedFile && (
-              <View style={styles.selectedFileContainer}>
-                <FileText size={20} color={Colors.text} />
-                <View style={styles.selectedFileInfo}>
-                  <Text style={styles.selectedFileName} numberOfLines={1}>
-                    {selectedFile.name}
-                  </Text>
-                  <Text style={styles.selectedFileSize}>
-                    {formatFileSize(selectedFile.size)}
-                  </Text>
-                </View>
+              <View style={styles.uploadIconContainer}>
+                <Upload size={24} color={Colors.primary} />
               </View>
-            )}
-            
-            {errors.file && (
-              <Text style={styles.errorText}>{errors.file}</Text>
-            )}
+              <Text style={styles.uploadText}>
+                {selectedFile ? selectedFile.name : 'Tap to select a document'}
+              </Text>
+              {errors.file && <Text style={styles.errorText}>{errors.file}</Text>}
+            </TouchableOpacity>
             
             <Input
               label="Document Name"
               placeholder="Enter document name"
-              value={name}
-              onChangeText={setName}
-              error={errors.name}
+              value={documentName}
+              onChangeText={setDocumentName}
+              error={errors.documentName}
               leftIcon={<FileText size={18} color={Colors.textLight} />}
             />
             
             <Input
               label="Document Type"
-              placeholder="e.g. Contract, Invoice, Plan"
-              value={type}
-              onChangeText={setType}
-              error={errors.type}
+              placeholder="e.g. PDF, DOCX, JPG"
+              value={documentType}
+              onChangeText={setDocumentType}
+              error={errors.documentType}
             />
-            
-            <Input
-              label="Folder (optional)"
-              placeholder="e.g. Contracts, Invoices, Plans"
-              value={folder}
-              onChangeText={setFolder}
-            />
-            
-            <Input
-              label="Tags (optional, comma separated)"
-              placeholder="e.g. important, reviewed, final"
-              value={tags}
-              onChangeText={setTags}
-              leftIcon={<Tag size={18} color={Colors.textLight} />}
-            />
-            
-            <View style={styles.uploadInfo}>
-              <User size={16} color={Colors.textLight} />
-              <Text style={styles.uploadInfoText}>
-                Will be uploaded by {user?.name || 'you'}
-              </Text>
-            </View>
             
             <View style={styles.buttonContainer}>
               <Button
@@ -249,13 +191,13 @@ export default function AddDocumentModal({ visible, onClose, projectId }: AddDoc
                 style={styles.button}
               />
               <Button
-                title="Upload Document"
+                title="Add Document"
                 onPress={handleSubmit}
                 loading={isSubmitting}
                 style={styles.button}
               />
             </View>
-          </ScrollView>
+          </View>
         </View>
       </KeyboardAvoidingView>
     </Modal>
@@ -272,7 +214,6 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    maxHeight: '90%',
   },
   modalContainer: {
     backgroundColor: Colors.card,
@@ -298,71 +239,39 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     padding: 16,
-    maxHeight: '80%',
   },
-  filePickerButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Colors.primary + '10',
+  uploadContainer: {
     borderWidth: 1,
-    borderColor: Colors.primary,
+    borderColor: Colors.border,
     borderStyle: 'dashed',
     borderRadius: 8,
     padding: 16,
-    marginBottom: 16,
-  },
-  filePickerText: {
-    fontSize: 16,
-    color: Colors.primary,
-    fontWeight: '500',
-    marginLeft: 8,
-  },
-  selectedFileContainer: {
-    flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.background,
-    borderRadius: 8,
-    padding: 12,
     marginBottom: 16,
-    borderWidth: 1,
-    borderColor: Colors.border,
   },
-  selectedFileInfo: {
-    flex: 1,
-    marginLeft: 12,
+  uploadIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: Colors.primary + '10',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
   },
-  selectedFileName: {
+  uploadText: {
     fontSize: 14,
-    fontWeight: '500',
-    color: Colors.text,
-    marginBottom: 4,
-  },
-  selectedFileSize: {
-    fontSize: 12,
     color: Colors.textLight,
+    textAlign: 'center',
   },
   errorText: {
     fontSize: 12,
     color: Colors.danger,
-    marginBottom: 16,
-  },
-  uploadInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 8,
-    marginBottom: 16,
-  },
-  uploadInfoText: {
-    fontSize: 12,
-    color: Colors.textLight,
-    marginLeft: 8,
+    marginTop: 4,
   },
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginTop: 16,
-    marginBottom: 24,
   },
   button: {
     flex: 1,

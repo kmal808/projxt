@@ -1,120 +1,48 @@
-// Common types used across the app
-
-export type User = {
+// User types
+export interface User {
   id: string;
   name: string;
   email: string;
-  role: 'admin' | 'manager' | 'field' | 'office' | 'sales';
+  role: string;
   crewId?: string;
-  avatar?: string;
   phone?: string;
-  title?: string;
-  bio?: string;
-};
+  avatar?: string;
+}
 
-export type Crew = {
+// Crew types
+export interface Crew {
   id: string;
   name: string;
   members: User[];
   projects: string[];
-  schedule?: {
-    id: string;
-    date: string;
-    location: string;
-    description: string;
-  }[];
-};
+  schedule?: ScheduleItem[];
+}
 
-export type Project = {
+export interface ScheduleItem {
+  id: string;
+  date: string;
+  location: string;
+  description: string;
+  crewId: string;
+}
+
+// Project types
+export interface Project {
   id: string;
   name: string;
   number: string;
-  status: 'pending' | 'active' | 'completed' | 'on-hold';
   client: string;
+  location: string;
+  budget: number;
   startDate: string;
   endDate?: string;
+  status: 'pending' | 'active' | 'completed' | 'on-hold';
   crews: string[];
-  budget: number;
-  location: string;
   tasks?: Task[];
   documents?: ProjectDocument[];
-};
+}
 
-export type ProjectDocument = {
-  id: string;
-  name: string;
-  type: string;
-  size: number;
-  uri: string;
-  uploadedBy: string;
-  uploadedAt: string;
-  folder?: string;
-  tags?: string[];
-};
-
-export type PayrollEntry = {
-  employeeId: string;
-  employeeName: string;
-  jobId: string;
-  jobName: string;
-  date: string;
-  amount: number;
-};
-
-export type InventoryItem = {
-  id: string;
-  jobName: string;
-  jobNumber: string;
-  manufacturerOrderNumber: string;
-  itemType: 'windows' | 'siding' | 'security_doors' | 'entry_doors' | 'other';
-  quantity: number;
-  notes?: string;
-  dateAdded: string;
-  addedBy: string;
-};
-
-export type ProductType = 'windows' | 'siding' | 'security_doors' | 'entry_doors' | 'other';
-
-export type WindowSeries = 'sliding' | 'hung' | 'casement' | 'awning' | 'fixed';
-
-export type WindowOperation = 'XO' | 'OX' | 'XOX' | 'OXO' | 'XX';
-
-export type WindowConfig = {
-  id: string;
-  type: 'windows';
-  series: WindowSeries;
-  width: number;
-  height: number;
-  operation: WindowOperation;
-  frameColor: string;
-  glassType: string;
-  hardware: string;
-  screenType: string;
-  price: number;
-};
-
-export type ProductConfig = WindowConfig | {
-  id: string;
-  type: ProductType;
-  // Other product specific properties
-  price: number;
-};
-
-export type Quote = {
-  id: string;
-  clientName: string;
-  clientEmail?: string;
-  clientPhone?: string;
-  date: string;
-  items: ProductConfig[];
-  subtotal: number;
-  tax: number;
-  total: number;
-  status: 'draft' | 'sent' | 'accepted' | 'rejected';
-  createdBy: string;
-};
-
-export type Task = {
+export interface Task {
   id: string;
   projectId: string;
   title: string;
@@ -125,30 +53,59 @@ export type Task = {
   priority: 'low' | 'medium' | 'high';
   createdAt: string;
   updatedAt: string;
-};
+}
 
-export type PunchListItem = {
+export interface ProjectDocument {
   id: string;
-  projectId: string;
-  description: string;
+  name: string;
+  type: string;
+  uri: string;
+  size: number;
+  uploadedBy: string;
+  uploadedAt: string;
+}
+
+// Inventory types
+export interface InventoryItem {
+  id: string;
+  name: string;
+  category: string;
+  quantity: number;
+  unit: string;
   location: string;
-  status: 'open' | 'in_progress' | 'completed';
-  assignedTo?: string;
-  photos?: string[];
+  lastUpdated: string;
+  minQuantity?: number;
+  cost?: number;
+  supplier?: string;
+}
+
+// File types
+export interface FileItem {
+  id: string;
+  name: string;
+  type: string;
+  size: number;
+  uri: string;
   createdAt: string;
   updatedAt: string;
-};
+  category: string;
+  tags?: string[];
+  sharedWith?: string[];
+  owner: string;
+}
 
-export type MaterialRequest = {
+// Auth types
+export interface AuthUser {
   id: string;
-  projectId: string;
-  items: {
-    name: string;
-    quantity: number;
-    unit: string;
-  }[];
-  requestedBy: string;
-  status: 'pending' | 'approved' | 'delivered';
-  requestDate: string;
-  deliveryDate?: string;
-};
+  name: string;
+  email: string;
+  role: 'admin' | 'manager' | 'field';
+  avatar?: string;
+}
+
+export interface AuthState {
+  user: AuthUser | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  error: string | null;
+}
