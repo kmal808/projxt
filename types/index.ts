@@ -7,6 +7,9 @@ export type User = {
   role: 'admin' | 'manager' | 'field' | 'office' | 'sales';
   crewId?: string;
   avatar?: string;
+  phone?: string;
+  title?: string;
+  bio?: string;
 };
 
 export type Crew = {

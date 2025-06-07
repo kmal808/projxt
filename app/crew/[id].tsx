@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Linking } from 'react-native';
 import { useLocalSearchParams, Stack, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useCrewsStore } from '@/store/crews-store';
@@ -9,6 +9,10 @@ import Button from '@/components/ui/Button';
 import Avatar from '@/components/ui/Avatar';
 import LoadingIndicator from '@/components/ui/LoadingIndicator';
 import Colors from '@/constants/colors';
+import EditCrewModal from '@/components/EditCrewModal';
+import AddTeamMemberModal from '@/components/AddTeamMemberModal';
+import AssignProjectModal from '@/components/AssignProjectModal';
+import ManageTeamModal from '@/components/ManageTeamModal';
 import { 
   Users, 
   Briefcase, 
@@ -23,11 +27,17 @@ import {
 export default function CrewDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const { crews, fetchCrews, deleteCrew } = useCrewsStore();
+  const { crews, fetchCrews, deleteCrew, removeProjectFromCrew } = useCrewsStore();
   const { projects, fetchProjects } = useProjectsStore();
   const [isLoading, setIsLoading] = useState(true);
   const [crew, setCrew] = useState<any>(null);
   const [crewProjects, setCrewProjects] = useState<any[]>([]);
+  
+  // Modal states
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showAddMemberModal, setShowAddMemberModal] = useState(false);
+  const [showAssignProjectModal, setShowAssignProjectModal] = useState(false);
+  const [showManageTeamModal, setShowManageTeamModal] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -64,8 +74,7 @@ export default function CrewDetailsScreen() {
   }, [id, crews, projects]);
 
   const handleEditCrew = () => {
-    // In a real app, navigate to edit form
-    Alert.alert("Edit Crew", "This would open the edit crew form");
+    setShowEditModal(true);
   };
 
   const handleDeleteCrew = () => {
@@ -89,6 +98,47 @@ export default function CrewDetailsScreen() {
         }
       ]
     );
+  };
+  
+  const handleRemoveProject = (projectId: string) => {
+    Alert.alert(
+      "Remove Project",
+      "Are you sure you want to remove this project from the crew?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel"
+        },
+        {
+          text: "Remove",
+          style: "destructive",
+          onPress: () => {
+            if (id) {
+              removeProjectFromCrew(id, projectId);
+              // Update local state
+              setCrewProjects(prev => prev.filter(project => project.id !== projectId));
+            }
+          }
+        }
+      ]
+    );
+  };
+  
+  const handleEmailMember = (email: string) => {
+    Linking.openURL(`mailto:${email}`).catch(err => {
+      Alert.alert("Error", "Could not open email app");
+    });
+  };
+  
+  const handleCallMember = (phone: string) => {
+    if (!phone) {
+      Alert.alert("Error", "No phone number available");
+      return;
+    }
+    
+    Linking.openURL(`tel:${phone}`).catch(err => {
+      Alert.alert("Error", "Could not open phone app");
+    });
   };
 
   if (isLoading) {
@@ -170,7 +220,10 @@ export default function CrewDetailsScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Team Members</Text>
-            <TouchableOpacity style={styles.addButton}>
+            <TouchableOpacity 
+              style={styles.addButton}
+              onPress={() => setShowAddMemberModal(true)}
+            >
               <Plus size={16} color={Colors.primary} />
               <Text style={styles.addButtonText}>Add Member</Text>
             </TouchableOpacity>
@@ -192,10 +245,16 @@ export default function CrewDetailsScreen() {
                     </Text>
                   </View>
                   <View style={styles.memberActions}>
-                    <TouchableOpacity style={styles.memberAction}>
+                    <TouchableOpacity 
+                      style={styles.memberAction}
+                      onPress={() => handleEmailMember(member.email)}
+                    >
                       <Mail size={18} color={Colors.primary} />
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.memberAction}>
+                    <TouchableOpacity 
+                      style={styles.memberAction}
+                      onPress={() => handleCallMember(member.phone || '')}
+                    >
                       <Phone size={18} color={Colors.primary} />
                     </TouchableOpacity>
                   </View>
@@ -208,14 +267,17 @@ export default function CrewDetailsScreen() {
             title="Manage Team Members"
             variant="outline"
             style={styles.manageButton}
-            onPress={() => {}}
+            onPress={() => setShowManageTeamModal(true)}
           />
         </View>
         
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Assigned Projects</Text>
-            <TouchableOpacity style={styles.addButton}>
+            <TouchableOpacity 
+              style={styles.addButton}
+              onPress={() => setShowAssignProjectModal(true)}
+            >
               <Plus size={16} color={Colors.primary} />
               <Text style={styles.addButtonText}>Assign Project</Text>
             </TouchableOpacity>
@@ -225,19 +287,27 @@ export default function CrewDetailsScreen() {
             <View style={styles.projectsList}>
               {crewProjects.map(project => (
                 <Card key={project.id} style={styles.projectCard}>
-                  <TouchableOpacity 
-                    style={styles.projectCardContent}
-                    onPress={() => router.push(`/project/${project.id}`)}
-                  >
-                    <View style={styles.projectInfo}>
+                  <View style={styles.projectCardContent}>
+                    <TouchableOpacity 
+                      style={styles.projectInfo}
+                      onPress={() => router.push(`/project/${project.id}`)}
+                    >
                       <Text style={styles.projectName}>{project.name}</Text>
                       <Text style={styles.projectNumber}>{project.number}</Text>
+                    </TouchableOpacity>
+                    <View style={styles.projectActions}>
+                      <View style={styles.projectStatus}>
+                        <View style={[styles.statusDot, { backgroundColor: getStatusColor(project.status) }]} />
+                        <Text style={styles.statusText}>{formatStatus(project.status)}</Text>
+                      </View>
+                      <TouchableOpacity 
+                        style={styles.removeProjectButton}
+                        onPress={() => handleRemoveProject(project.id)}
+                      >
+                        <Trash2 size={16} color={Colors.danger} />
+                      </TouchableOpacity>
                     </View>
-                    <View style={styles.projectStatus}>
-                      <View style={[styles.statusDot, { backgroundColor: getStatusColor(project.status) }]} />
-                      <Text style={styles.statusText}>{formatStatus(project.status)}</Text>
-                    </View>
-                  </TouchableOpacity>
+                  </View>
                 </Card>
               ))}
             </View>
@@ -249,7 +319,7 @@ export default function CrewDetailsScreen() {
                 size="small"
                 leftIcon={<Plus size={16} color="#FFFFFF" />}
                 style={styles.emptyButton}
-                onPress={() => {}}
+                onPress={() => setShowAssignProjectModal(true)}
               />
             </Card>
           )}
@@ -282,12 +352,43 @@ export default function CrewDetailsScreen() {
                 size="small"
                 leftIcon={<Briefcase size={16} color="#FFFFFF" />}
                 style={styles.emptyButton}
-                onPress={() => {}}
+                onPress={() => {
+                  Alert.alert(
+                    "Schedule Management",
+                    "Schedule management will be available in a future update."
+                  );
+                }}
               />
             </Card>
           )}
         </View>
       </ScrollView>
+      
+      {/* Modals */}
+      <EditCrewModal
+        visible={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        crew={crew}
+      />
+      
+      <AddTeamMemberModal
+        visible={showAddMemberModal}
+        onClose={() => setShowAddMemberModal(false)}
+        crew={crew}
+      />
+      
+      <AssignProjectModal
+        visible={showAssignProjectModal}
+        onClose={() => setShowAssignProjectModal(false)}
+        crew={crew}
+      />
+      
+      <ManageTeamModal
+        visible={showManageTeamModal}
+        onClose={() => setShowManageTeamModal(false)}
+        crew={crew}
+        onAddMember={() => setShowAddMemberModal(true)}
+      />
     </SafeAreaView>
   );
 }
@@ -472,6 +573,10 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: Colors.textLight,
   },
+  projectActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   projectStatus: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -479,6 +584,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
+    marginRight: 8,
   },
   statusDot: {
     width: 8,
@@ -489,6 +595,14 @@ const styles = StyleSheet.create({
   statusText: {
     fontSize: 12,
     color: Colors.textLight,
+  },
+  removeProjectButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: Colors.danger + '10',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   scheduleList: {
     marginBottom: 16,

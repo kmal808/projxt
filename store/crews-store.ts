@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Crew } from '@/types';
+import { Crew, User, Project } from '@/types';
 
 interface CrewsState {
   crews: Crew[];
@@ -9,6 +9,10 @@ interface CrewsState {
   addCrew: (crew: Crew) => void;
   updateCrew: (id: string, updates: Partial<Crew>) => void;
   deleteCrew: (id: string) => void;
+  addMemberToCrew: (crewId: string, member: User) => void;
+  removeMemberFromCrew: (crewId: string, memberId: string) => void;
+  assignProjectToCrew: (crewId: string, projectId: string) => void;
+  removeProjectFromCrew: (crewId: string, projectId: string) => void;
 }
 
 // Mock crew data
@@ -23,6 +27,7 @@ const mockCrews: Crew[] = [
         email: 'field@constructionpro.com',
         role: 'field',
         crewId: 'crew1',
+        phone: '555-123-4567',
       },
       {
         id: '6',
@@ -30,6 +35,7 @@ const mockCrews: Crew[] = [
         email: 'john@constructionpro.com',
         role: 'field',
         crewId: 'crew1',
+        phone: '555-987-6543',
       },
       {
         id: '7',
@@ -37,6 +43,7 @@ const mockCrews: Crew[] = [
         email: 'mike@constructionpro.com',
         role: 'field',
         crewId: 'crew1',
+        phone: '555-456-7890',
       },
     ],
     projects: ['p1', 'p3', 'p5'],
@@ -51,6 +58,7 @@ const mockCrews: Crew[] = [
         email: 'sarah@constructionpro.com',
         role: 'field',
         crewId: 'crew2',
+        phone: '555-234-5678',
       },
       {
         id: '9',
@@ -58,6 +66,7 @@ const mockCrews: Crew[] = [
         email: 'david@constructionpro.com',
         role: 'field',
         crewId: 'crew2',
+        phone: '555-876-5432',
       },
     ],
     projects: ['p1', 'p4', 'p5'],
@@ -72,6 +81,7 @@ const mockCrews: Crew[] = [
         email: 'lisa@constructionpro.com',
         role: 'field',
         crewId: 'crew3',
+        phone: '555-345-6789',
       },
       {
         id: '11',
@@ -79,6 +89,7 @@ const mockCrews: Crew[] = [
         email: 'robert@constructionpro.com',
         role: 'field',
         crewId: 'crew3',
+        phone: '555-765-4321',
       },
       {
         id: '12',
@@ -86,13 +97,14 @@ const mockCrews: Crew[] = [
         email: 'emily@constructionpro.com',
         role: 'field',
         crewId: 'crew3',
+        phone: '555-567-8901',
       },
     ],
     projects: ['p2', 'p4'],
   },
 ];
 
-export const useCrewsStore = create<CrewsState>((set) => ({
+export const useCrewsStore = create<CrewsState>((set, get) => ({
   crews: [],
   isLoading: false,
   error: null,
@@ -121,6 +133,67 @@ export const useCrewsStore = create<CrewsState>((set) => ({
   deleteCrew: (id) => {
     set((state) => ({
       crews: state.crews.filter((crew) => crew.id !== id),
+    }));
+  },
+  addMemberToCrew: (crewId, member) => {
+    set((state) => ({
+      crews: state.crews.map((crew) => {
+        if (crew.id === crewId) {
+          // Check if member already exists
+          const memberExists = crew.members.some(m => m.id === member.id);
+          if (memberExists) {
+            return crew;
+          }
+          return {
+            ...crew,
+            members: [...crew.members, { ...member, crewId }],
+          };
+        }
+        return crew;
+      }),
+    }));
+  },
+  removeMemberFromCrew: (crewId, memberId) => {
+    set((state) => ({
+      crews: state.crews.map((crew) => {
+        if (crew.id === crewId) {
+          return {
+            ...crew,
+            members: crew.members.filter(member => member.id !== memberId),
+          };
+        }
+        return crew;
+      }),
+    }));
+  },
+  assignProjectToCrew: (crewId, projectId) => {
+    set((state) => ({
+      crews: state.crews.map((crew) => {
+        if (crew.id === crewId) {
+          // Check if project already assigned
+          if (crew.projects.includes(projectId)) {
+            return crew;
+          }
+          return {
+            ...crew,
+            projects: [...crew.projects, projectId],
+          };
+        }
+        return crew;
+      }),
+    }));
+  },
+  removeProjectFromCrew: (crewId, projectId) => {
+    set((state) => ({
+      crews: state.crews.map((crew) => {
+        if (crew.id === crewId) {
+          return {
+            ...crew,
+            projects: crew.projects.filter(id => id !== projectId),
+          };
+        }
+        return crew;
+      }),
     }));
   },
 }));
