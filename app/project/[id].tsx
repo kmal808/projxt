@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Linking } from 'react-native';
 import { useLocalSearchParams, Stack, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useProjectsStore } from '@/store/projects-store';
@@ -9,8 +9,13 @@ import Button from '@/components/ui/Button';
 import StatusBadge from '@/components/ui/StatusBadge';
 import Avatar from '@/components/ui/Avatar';
 import LoadingIndicator from '@/components/ui/LoadingIndicator';
+import EditProjectModal from '@/components/EditProjectModal';
+import AddTaskModal from '@/components/AddTaskModal';
+import EditTaskModal from '@/components/EditTaskModal';
+import AddDocumentModal from '@/components/AddDocumentModal';
+import AssignCrewModal from '@/components/AssignCrewModal';
 import Colors from '@/constants/colors';
-import { Task } from '@/types';
+import { Task, ProjectDocument } from '@/types';
 import { 
   Calendar, 
   MapPin, 
@@ -22,17 +27,30 @@ import {
   Plus,
   CheckCircle,
   Clock,
-  AlertCircle
+  AlertCircle,
+  Download,
+  ExternalLink,
+  FileText,
+  Mail,
+  Phone
 } from 'lucide-react-native';
 
 export default function ProjectDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const { projects, fetchProjects, deleteProject } = useProjectsStore();
+  const { projects, fetchProjects, deleteProject, deleteDocumentFromProject } = useProjectsStore();
   const { crews, fetchCrews } = useCrewsStore();
   const [isLoading, setIsLoading] = useState(true);
   const [project, setProject] = useState<any>(null);
   const [assignedCrews, setAssignedCrews] = useState<any[]>([]);
+  
+  // Modal states
+  const [isEditProjectModalVisible, setIsEditProjectModalVisible] = useState(false);
+  const [isAddTaskModalVisible, setIsAddTaskModalVisible] = useState(false);
+  const [isEditTaskModalVisible, setIsEditTaskModalVisible] = useState(false);
+  const [isAddDocumentModalVisible, setIsAddDocumentModalVisible] = useState(false);
+  const [isAssignCrewModalVisible, setIsAssignCrewModalVisible] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
   useEffect(() => {
     const loadData = async () => {
@@ -69,8 +87,7 @@ export default function ProjectDetailsScreen() {
   }, [id, projects, crews]);
 
   const handleEditProject = () => {
-    // In a real app, navigate to edit form
-    Alert.alert("Edit Project", "This would open the edit project form");
+    setIsEditProjectModalVisible(true);
   };
 
   const handleDeleteProject = () => {
@@ -117,57 +134,66 @@ export default function ProjectDetailsScreen() {
   };
 
   const calculateProgress = () => {
-    // In a real app, this would be based on completed tasks or milestones
-    // For demo, we'll use a random value between 0-100
-    return Math.floor(Math.random() * 100);
+    if (!project.tasks || project.tasks.length === 0) return 0;
+    
+    const totalTasks = project.tasks.length;
+    const completedTasks = project.tasks.filter((task: Task) => task.status === 'completed').length;
+    
+    return Math.floor((completedTasks / totalTasks) * 100);
   };
 
-  // Mock tasks for demo - with all required properties
-  const mockTasks: Task[] = [
-    { 
-      id: 't1', 
-      projectId: id as string, 
-      title: 'Site preparation', 
-      status: 'completed' as const, 
-      assignedTo: 'John Smith',
-      priority: 'medium',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    },
-    { 
-      id: 't2', 
-      projectId: id as string, 
-      title: 'Foundation work', 
-      status: 'in_progress' as const, 
-      assignedTo: 'Mike Johnson',
-      priority: 'high',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    },
-    { 
-      id: 't3', 
-      projectId: id as string, 
-      title: 'Framing', 
-      status: 'todo' as const, 
-      assignedTo: 'Sarah Williams',
-      priority: 'medium',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    },
-    { 
-      id: 't4', 
-      projectId: id as string, 
-      title: 'Electrical installation', 
-      status: 'todo' as const, 
-      assignedTo: 'David Brown',
-      priority: 'low',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    },
-  ];
+  const handleTaskPress = (task: Task) => {
+    setSelectedTask(task);
+    setIsEditTaskModalVisible(true);
+  };
 
-  // Default empty documents array if not present
-  const projectDocuments = project?.documents || [];
+  const handleDocumentPress = (document: ProjectDocument) => {
+    // In a real app, this would open the document
+    if (document.uri) {
+      Linking.openURL(document.uri).catch(() => {
+        Alert.alert("Error", "Could not open the document URL");
+      });
+    }
+  };
+
+  const handleDeleteDocument = (documentId: string) => {
+    Alert.alert(
+      "Delete Document",
+      "Are you sure you want to delete this document? This action cannot be undone.",
+      [
+        {
+          text: "Cancel",
+          style: "cancel"
+        },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => {
+            if (id) {
+              deleteDocumentFromProject(id, documentId);
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const handleContactCrew = (crew: any, method: 'email' | 'phone') => {
+    // Find the crew leader or first member
+    const contact = crew.members[0];
+    
+    if (method === 'email' && contact.email) {
+      Linking.openURL(`mailto:${contact.email}`).catch(() => {
+        Alert.alert("Error", "Could not open email client");
+      });
+    } else if (method === 'phone' && contact.phone) {
+      Linking.openURL(`tel:${contact.phone}`).catch(() => {
+        Alert.alert("Error", "Could not open phone");
+      });
+    } else {
+      Alert.alert("Error", `No ${method} available for this crew`);
+    }
+  };
 
   if (isLoading) {
     return <LoadingIndicator fullScreen text="Loading project details..." />;
@@ -192,7 +218,10 @@ export default function ProjectDetailsScreen() {
   }
 
   // Default empty tasks array if not present
-  const projectTasks = project.tasks || mockTasks;
+  const projectTasks = project.tasks || [];
+  
+  // Default empty documents array if not present
+  const projectDocuments = project.documents || [];
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
@@ -295,7 +324,10 @@ export default function ProjectDetailsScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Assigned Crews</Text>
-            <TouchableOpacity style={styles.addButton}>
+            <TouchableOpacity 
+              style={styles.addButton}
+              onPress={() => setIsAssignCrewModalVisible(true)}
+            >
               <Plus size={16} color={Colors.primary} />
               <Text style={styles.addButtonText}>Assign Crew</Text>
             </TouchableOpacity>
@@ -305,29 +337,46 @@ export default function ProjectDetailsScreen() {
             <View style={styles.crewsList}>
               {assignedCrews.map(crew => (
                 <Card key={crew.id} style={styles.crewCard}>
-                  <TouchableOpacity 
-                    style={styles.crewCardContent}
-                    onPress={() => router.push(`/crew/${crew.id}`)}
-                  >
-                    <Text style={styles.crewName}>{crew.name}</Text>
-                    <View style={styles.crewMembers}>
-                      {crew.members.slice(0, 3).map((member: any, index: number) => (
-                        <View key={member.id} style={[styles.crewMemberAvatar, { zIndex: 10 - index }]}>
-                          <Avatar 
-                            name={member.name} 
-                            size={28} 
-                            imageUrl={member.avatar}
-                          />
-                        </View>
-                      ))}
-                      
-                      {crew.members.length > 3 && (
-                        <View style={styles.moreMembersContainer}>
-                          <Text style={styles.moreMembers}>+{crew.members.length - 3}</Text>
-                        </View>
-                      )}
+                  <View style={styles.crewCardContent}>
+                    <TouchableOpacity 
+                      style={styles.crewNameContainer}
+                      onPress={() => router.push(`/crew/${crew.id}`)}
+                    >
+                      <Text style={styles.crewName}>{crew.name}</Text>
+                      <View style={styles.crewMembers}>
+                        {crew.members.slice(0, 3).map((member: any, index: number) => (
+                          <View key={member.id} style={[styles.crewMemberAvatar, { zIndex: 10 - index }]}>
+                            <Avatar 
+                              name={member.name} 
+                              size={28} 
+                              imageUrl={member.avatar}
+                            />
+                          </View>
+                        ))}
+                        
+                        {crew.members.length > 3 && (
+                          <View style={styles.moreMembersContainer}>
+                            <Text style={styles.moreMembers}>+{crew.members.length - 3}</Text>
+                          </View>
+                        )}
+                      </View>
+                    </TouchableOpacity>
+                    
+                    <View style={styles.crewActions}>
+                      <TouchableOpacity 
+                        style={styles.crewActionButton}
+                        onPress={() => handleContactCrew(crew, 'email')}
+                      >
+                        <Mail size={18} color={Colors.primary} />
+                      </TouchableOpacity>
+                      <TouchableOpacity 
+                        style={styles.crewActionButton}
+                        onPress={() => handleContactCrew(crew, 'phone')}
+                      >
+                        <Phone size={18} color={Colors.primary} />
+                      </TouchableOpacity>
                     </View>
-                  </TouchableOpacity>
+                  </View>
                 </Card>
               ))}
             </View>
@@ -339,7 +388,7 @@ export default function ProjectDetailsScreen() {
                 size="small"
                 leftIcon={<Plus size={16} color="#FFFFFF" />}
                 style={styles.emptyButton}
-                onPress={() => {}}
+                onPress={() => setIsAssignCrewModalVisible(true)}
               />
             </Card>
           )}
@@ -348,48 +397,75 @@ export default function ProjectDetailsScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Tasks</Text>
-            <TouchableOpacity style={styles.addButton}>
+            <TouchableOpacity 
+              style={styles.addButton}
+              onPress={() => setIsAddTaskModalVisible(true)}
+            >
               <Plus size={16} color={Colors.primary} />
               <Text style={styles.addButtonText}>Add Task</Text>
             </TouchableOpacity>
           </View>
           
-          <View style={styles.tasksList}>
-            {projectTasks.map((task: Task) => (
-              <Card key={task.id} style={styles.taskCard}>
-                <View style={styles.taskHeader}>
-                  <Text style={styles.taskTitle}>{task.title}</Text>
-                  <StatusBadge status={task.status} size="small" />
-                </View>
-                <View style={styles.taskDetails}>
-                  <Text style={styles.taskAssignee}>Assigned to: {task.assignedTo}</Text>
-                  {task.status === 'completed' && (
-                    <View style={styles.taskStatusIcon}>
-                      <CheckCircle size={16} color={Colors.success} />
+          {projectTasks.length > 0 ? (
+            <View style={styles.tasksList}>
+              {projectTasks.map((task: Task) => (
+                <TouchableOpacity 
+                  key={task.id} 
+                  onPress={() => handleTaskPress(task)}
+                  activeOpacity={0.7}
+                >
+                  <Card style={styles.taskCard}>
+                    <View style={styles.taskHeader}>
+                      <Text style={styles.taskTitle}>{task.title}</Text>
+                      <StatusBadge status={task.status} size="small" />
                     </View>
-                  )}
-                  {task.status === 'in_progress' && (
-                    <View style={styles.taskStatusIcon}>
-                      <Clock size={16} color={Colors.primary} />
+                    <View style={styles.taskDetails}>
+                      <Text style={styles.taskAssignee}>Assigned to: {task.assignedTo || 'Unassigned'}</Text>
+                      {task.status === 'completed' && (
+                        <View style={styles.taskStatusIcon}>
+                          <CheckCircle size={16} color={Colors.success} />
+                        </View>
+                      )}
+                      {task.status === 'in_progress' && (
+                        <View style={styles.taskStatusIcon}>
+                          <Clock size={16} color={Colors.primary} />
+                        </View>
+                      )}
                     </View>
-                  )}
-                </View>
-              </Card>
-            ))}
-          </View>
+                  </Card>
+                </TouchableOpacity>
+              ))}
+            </View>
+          ) : (
+            <Card style={styles.emptyCard}>
+              <Text style={styles.emptyText}>No tasks added yet</Text>
+              <Button
+                title="Add Task"
+                size="small"
+                leftIcon={<Plus size={16} color="#FFFFFF" />}
+                style={styles.emptyButton}
+                onPress={() => setIsAddTaskModalVisible(true)}
+              />
+            </Card>
+          )}
           
-          <Button
-            title="View All Tasks"
-            variant="outline"
-            style={styles.viewAllButton}
-            onPress={() => {}}
-          />
+          {projectTasks.length > 0 && (
+            <Button
+              title="View All Tasks"
+              variant="outline"
+              style={styles.viewAllButton}
+              onPress={() => Alert.alert("View All Tasks", "This would navigate to a full task list view")}
+            />
+          )}
         </View>
         
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Documents</Text>
-            <TouchableOpacity style={styles.addButton}>
+            <TouchableOpacity 
+              style={styles.addButton}
+              onPress={() => setIsAddDocumentModalVisible(true)}
+            >
               <Plus size={16} color={Colors.primary} />
               <Text style={styles.addButtonText}>Add Document</Text>
             </TouchableOpacity>
@@ -397,14 +473,37 @@ export default function ProjectDetailsScreen() {
           
           {projectDocuments.length > 0 ? (
             <View style={styles.documentsList}>
-              {projectDocuments.map((doc: any) => (
+              {projectDocuments.map((doc: ProjectDocument) => (
                 <Card key={doc.id} style={styles.documentCard}>
-                  <TouchableOpacity style={styles.documentCardContent}>
-                    <Text style={styles.documentName}>{doc.name}</Text>
-                    <Text style={styles.documentType}>{doc.type}</Text>
-                    <Text style={styles.documentUploadInfo}>
-                      Uploaded by {doc.uploadedBy} on {new Date(doc.uploadedAt).toLocaleDateString()}
-                    </Text>
+                  <TouchableOpacity 
+                    style={styles.documentCardContent}
+                    onPress={() => handleDocumentPress(doc)}
+                  >
+                    <View style={styles.documentInfo}>
+                      <FileText size={20} color={Colors.primary} />
+                      <View style={styles.documentDetails}>
+                        <Text style={styles.documentName}>{doc.name}</Text>
+                        <Text style={styles.documentType}>{doc.type}</Text>
+                        <Text style={styles.documentUploadInfo}>
+                          Uploaded by {doc.uploadedBy} on {new Date(doc.uploadedAt).toLocaleDateString()}
+                        </Text>
+                      </View>
+                    </View>
+                    
+                    <View style={styles.documentActions}>
+                      <TouchableOpacity 
+                        style={styles.documentActionButton}
+                        onPress={() => handleDocumentPress(doc)}
+                      >
+                        <ExternalLink size={18} color={Colors.primary} />
+                      </TouchableOpacity>
+                      <TouchableOpacity 
+                        style={styles.documentActionButton}
+                        onPress={() => handleDeleteDocument(doc.id)}
+                      >
+                        <Trash2 size={18} color={Colors.danger} />
+                      </TouchableOpacity>
+                    </View>
                   </TouchableOpacity>
                 </Card>
               ))}
@@ -417,12 +516,44 @@ export default function ProjectDetailsScreen() {
                 size="small"
                 leftIcon={<Plus size={16} color="#FFFFFF" />}
                 style={styles.emptyButton}
-                onPress={() => {}}
+                onPress={() => setIsAddDocumentModalVisible(true)}
               />
             </Card>
           )}
         </View>
       </ScrollView>
+      
+      {/* Modals */}
+      <EditProjectModal
+        visible={isEditProjectModalVisible}
+        onClose={() => setIsEditProjectModalVisible(false)}
+        project={project}
+      />
+      
+      <AddTaskModal
+        visible={isAddTaskModalVisible}
+        onClose={() => setIsAddTaskModalVisible(false)}
+        projectId={id as string}
+      />
+      
+      <EditTaskModal
+        visible={isEditTaskModalVisible}
+        onClose={() => setIsEditTaskModalVisible(false)}
+        task={selectedTask}
+        projectId={id as string}
+      />
+      
+      <AddDocumentModal
+        visible={isAddDocumentModalVisible}
+        onClose={() => setIsAddDocumentModalVisible(false)}
+        projectId={id as string}
+      />
+      
+      <AssignCrewModal
+        visible={isAssignCrewModalVisible}
+        onClose={() => setIsAssignCrewModalVisible(false)}
+        project={project}
+      />
     </SafeAreaView>
   );
 }
@@ -555,10 +686,14 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  crewNameContainer: {
+    flex: 1,
+  },
   crewName: {
     fontSize: 16,
     fontWeight: '500',
     color: Colors.text,
+    marginBottom: 8,
   },
   crewMembers: {
     flexDirection: 'row',
@@ -585,6 +720,19 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: 'bold',
     color: Colors.textLight,
+  },
+  crewActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  crewActionButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: Colors.primary + '10',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 8,
   },
   tasksList: {
     marginBottom: 16,
@@ -631,6 +779,18 @@ const styles = StyleSheet.create({
   },
   documentCardContent: {
     flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  documentInfo: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  documentDetails: {
+    marginLeft: 12,
+    flex: 1,
   },
   documentName: {
     fontSize: 14,
@@ -646,6 +806,21 @@ const styles = StyleSheet.create({
   documentUploadInfo: {
     fontSize: 10,
     color: Colors.textLight,
+  },
+  documentActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  documentActionButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: Colors.background,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 8,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
   emptyCard: {
     alignItems: 'center',
