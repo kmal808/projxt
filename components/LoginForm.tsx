@@ -27,8 +27,6 @@ export const LoginForm: React.FC = () => {
     
     if (!password) {
       newErrors.password = 'Password is required';
-    } else if (password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
     }
     
     setErrors(newErrors);
@@ -41,9 +39,6 @@ export const LoginForm: React.FC = () => {
     setIsLoading(true);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
       const success = await login(email, password);
       
       if (success) {
@@ -51,21 +46,19 @@ export const LoginForm: React.FC = () => {
       } else {
         Alert.alert('Login Failed', 'Invalid email or password');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Login error:', error);
-      Alert.alert('Login Failed', 'An error occurred during login');
+      Alert.alert('Login Failed', error.message || 'An error occurred during login');
     } finally {
       setIsLoading(false);
     }
   };
 
+  // For development/demo purposes only
   const handleDemoLogin = async (role: 'admin' | 'manager' | 'field' | 'office' | 'sales') => {
     setIsLoading(true);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
       // Get demo user by role
       let demoEmail = '';
       let demoPassword = 'password123'; // Demo password for all accounts
@@ -95,9 +88,9 @@ export const LoginForm: React.FC = () => {
       } else {
         throw new Error('Demo login failed');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Demo login error:', error);
-      Alert.alert('Login Failed', 'An error occurred during demo login');
+      Alert.alert('Login Failed', error.message || 'An error occurred during demo login');
     } finally {
       setIsLoading(false);
     }
@@ -126,6 +119,12 @@ export const LoginForm: React.FC = () => {
         leftIcon={<Lock size={18} color={Colors.textLight} />}
       />
       
+      <View style={styles.forgotPasswordContainer}>
+        <TouchableOpacity onPress={() => router.push('/reset-password')}>
+          <Text style={styles.forgotPasswordText}>Forgot password?</Text>
+        </TouchableOpacity>
+      </View>
+      
       <Button
         title="Sign In"
         onPress={handleLogin}
@@ -133,6 +132,14 @@ export const LoginForm: React.FC = () => {
         style={styles.button}
       />
       
+      <View style={styles.registerContainer}>
+        <Text style={styles.registerText}>Don't have an account?</Text>
+        <TouchableOpacity onPress={() => router.push('/register')}>
+          <Text style={styles.registerLink}>Create Account</Text>
+        </TouchableOpacity>
+      </View>
+      
+      {/* Demo section - Remove this in production */}
       <View style={styles.demoSection}>
         <Text style={styles.demoTitle}>Demo Accounts</Text>
         <Text style={styles.demoSubtitle}>Quick access with different roles</Text>
@@ -192,8 +199,32 @@ const styles = StyleSheet.create({
   container: {
     width: '100%',
   },
+  forgotPasswordContainer: {
+    alignItems: 'flex-end',
+    marginTop: 4,
+    marginBottom: 16,
+  },
+  forgotPasswordText: {
+    fontSize: 14,
+    color: Colors.primary,
+  },
   button: {
     marginTop: 8,
+  },
+  registerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 24,
+  },
+  registerText: {
+    fontSize: 14,
+    color: Colors.textLight,
+  },
+  registerLink: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: Colors.primary,
+    marginLeft: 4,
   },
   demoSection: {
     marginTop: 32,

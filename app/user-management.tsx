@@ -1,66 +1,24 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ScrollView } from 'react-native';
 import { useRouter, Link } from 'expo-router';
 import { Stack } from 'expo-router';
-import { User, ChevronRight, ArrowLeft, Shield, Home, Settings } from 'lucide-react-native';
+import { User, ChevronRight, ArrowLeft, Shield, Home, Settings, UserPlus, Search, Filter, Trash2 } from 'lucide-react-native';
 import Colors from '@/constants/colors';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
+import Input from '@/components/ui/Input';
 import { useAuthStore } from '@/store/auth-store';
 import { useThemeStore } from '@/store/theme-store';
 
-// Mock users for demonstration
-const MOCK_USERS = [
-  {
-    id: '1',
-    name: 'Admin User',
-    email: 'admin@projxt.com',
-    role: 'admin',
-    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
-  },
-  {
-    id: '2',
-    name: 'Project Manager',
-    email: 'manager@projxt.com',
-    role: 'manager',
-    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
-  },
-  {
-    id: '3',
-    name: 'Field Worker',
-    email: 'field@projxt.com',
-    role: 'field',
-    avatar: 'https://images.unsplash.com/photo-1531427186611-ecfd6d936c79?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
-  },
-  {
-    id: '4',
-    name: 'Office Staff',
-    email: 'office@projxt.com',
-    role: 'office',
-    avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
-  },
-  {
-    id: '5',
-    name: 'Sales Rep',
-    email: 'sales@projxt.com',
-    role: 'sales',
-    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
-  },
-  {
-    id: '6',
-    name: 'Demo User',
-    email: 'demo@projxt.com',
-    role: 'manager',
-    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
-  }
-];
-
 export default function UserManagementScreen() {
   const router = useRouter();
-  const { user, adminRequests, approveAdminRequest, rejectAdminRequest, updateUserRole } = useAuthStore();
+  const { user, users, adminRequests, approveAdminRequest, rejectAdminRequest, updateUserRole, deleteUser } = useAuthStore();
   const { isDarkMode } = useThemeStore();
   const theme = isDarkMode ? Colors.dark : Colors;
-  const [selectedUser, setSelectedUser] = useState<null | typeof MOCK_USERS[0]>(null);
+  
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedRole, setSelectedRole] = useState<string | null>(null);
+  const [selectedUser, setSelectedUser] = useState<null | typeof users[0]>(null);
   
   // Check if current user is admin
   if (user?.role !== 'admin') {
@@ -83,7 +41,19 @@ export default function UserManagementScreen() {
     );
   }
   
-  const handleUserPress = (user: typeof MOCK_USERS[0]) => {
+  // Filter users based on search query and role filter
+  const filteredUsers = users.filter(u => {
+    const matchesSearch = 
+      u.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      u.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (u.title && u.title.toLowerCase().includes(searchQuery.toLowerCase()));
+    
+    const matchesRole = selectedRole ? u.role === selectedRole : true;
+    
+    return matchesSearch && matchesRole;
+  });
+  
+  const handleUserPress = (user: typeof users[0]) => {
     setSelectedUser(user);
     
     Alert.alert(
@@ -94,12 +64,17 @@ export default function UserManagementScreen() {
         { 
           text: 'Change Role', 
           onPress: () => showRoleSelectionDialog(user)
+        },
+        { 
+          text: 'Delete User', 
+          style: 'destructive',
+          onPress: () => confirmDeleteUser(user)
         }
       ]
     );
   };
   
-  const showRoleSelectionDialog = (user: typeof MOCK_USERS[0]) => {
+  const showRoleSelectionDialog = (user: typeof users[0]) => {
     Alert.alert(
       'Change User Role',
       `Select a new role for ${user.name}:`,
@@ -114,7 +89,7 @@ export default function UserManagementScreen() {
     );
   };
   
-  const confirmRoleChange = (user: typeof MOCK_USERS[0], newRole: 'admin' | 'manager' | 'field' | 'office' | 'sales') => {
+  const confirmRoleChange = (user: typeof users[0], newRole: 'admin' | 'manager' | 'field' | 'office' | 'sales') => {
     if (user.role === newRole) {
       Alert.alert('No Change', `${user.name} is already a ${newRole}.`);
       return;
@@ -131,13 +106,35 @@ export default function UserManagementScreen() {
             // Update user role
             updateUserRole(user.id, newRole);
             
-            // Update local mock data for UI
-            const updatedUser = MOCK_USERS.find(u => u.id === user.id);
-            if (updatedUser) {
-              updatedUser.role = newRole;
-            }
-            
             Alert.alert('Success', `${user.name}'s role has been updated to ${newRole}.`);
+          }
+        }
+      ]
+    );
+  };
+  
+  const confirmDeleteUser = (user: typeof users[0]) => {
+    // Don't allow deleting yourself
+    if (user.id === user?.id) {
+      Alert.alert('Error', 'You cannot delete your own account.');
+      return;
+    }
+    
+    Alert.alert(
+      'Confirm Delete',
+      `Are you sure you want to delete ${user.name}? This action cannot be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Delete', 
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteUser(user.id);
+              Alert.alert('Success', `${user.name} has been deleted.`);
+            } catch (error: any) {
+              Alert.alert('Error', error.message || 'Failed to delete user');
+            }
           }
         }
       ]
@@ -166,7 +163,11 @@ export default function UserManagementScreen() {
     );
   };
   
-  const renderUserItem = ({ item }: { item: typeof MOCK_USERS[0] }) => (
+  const handleRoleFilter = (role: string | null) => {
+    setSelectedRole(role === selectedRole ? null : role);
+  };
+  
+  const renderUserItem = ({ item }: { item: typeof users[0] }) => (
     <TouchableOpacity
       style={[styles.userItem, { borderBottomColor: theme.border }]}
       onPress={() => handleUserPress(item)}
@@ -182,6 +183,9 @@ export default function UserManagementScreen() {
       <View style={styles.userInfo}>
         <Text style={[styles.userName, { color: theme.text }]}>{item.name}</Text>
         <Text style={[styles.userEmail, { color: theme.textLight }]}>{item.email}</Text>
+        {item.title && (
+          <Text style={[styles.userTitle, { color: theme.textLight }]}>{item.title}</Text>
+        )}
       </View>
       
       <View style={styles.userRole}>
@@ -214,89 +218,191 @@ export default function UserManagementScreen() {
         }} 
       />
       
-      <View style={styles.header}>
-        <Text style={[styles.headerTitle, { color: theme.text }]}>User Management</Text>
-        <Text style={[styles.headerSubtitle, { color: theme.textLight }]}>Manage users and their roles</Text>
-      </View>
-      
-      {/* Navigation Buttons */}
-      <View style={styles.navigationButtons}>
-        <TouchableOpacity 
-          style={[styles.navButton, { backgroundColor: theme.card }]} 
-          onPress={() => router.replace('/(tabs)')}
-        >
-          <Home size={20} color={Colors.primary} />
-          <Text style={[styles.navButtonText, { color: theme.text }]}>Dashboard</Text>
-        </TouchableOpacity>
+      <ScrollView 
+        style={styles.scrollView}
+        contentContainerStyle={styles.contentContainer}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.header}>
+          <Text style={[styles.headerTitle, { color: theme.text }]}>User Management</Text>
+          <Text style={[styles.headerSubtitle, { color: theme.textLight }]}>Manage users and their roles</Text>
+        </View>
         
-        <TouchableOpacity 
-          style={[styles.navButton, { backgroundColor: theme.card }]} 
-          onPress={() => router.replace('/(tabs)/settings')}
-        >
-          <Settings size={20} color={Colors.primary} />
-          <Text style={[styles.navButtonText, { color: theme.text }]}>Settings</Text>
-        </TouchableOpacity>
-      </View>
-      
-      {/* Admin Requests Section */}
-      {adminRequests.length > 0 && (
-        <Card style={styles.requestsCard}>
-          <Text style={[styles.requestsTitle, { color: theme.text }]}>Admin Access Requests</Text>
+        {/* Action Buttons */}
+        <View style={styles.actionButtons}>
+          <Button
+            title="Invite User"
+            onPress={() => router.push('/invite-user')}
+            leftIcon={<UserPlus size={18} color="#FFFFFF" />}
+            style={styles.actionButton}
+          />
+        </View>
+        
+        {/* Search and Filter */}
+        <Card style={styles.searchCard}>
+          <View style={styles.searchContainer}>
+            <Search size={18} color={theme.textLight} style={styles.searchIcon} />
+            <Input
+              placeholder="Search users..."
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              style={styles.searchInput}
+              containerStyle={styles.searchInputContainer}
+            />
+          </View>
           
-          {adminRequests.map((request) => (
-            <View key={request.userId} style={[styles.requestItem, { borderBottomColor: theme.border }]}>
-              <View style={styles.requestInfo}>
-                <Text style={[styles.requestName, { color: theme.text }]}>{request.userName}</Text>
-                <Text style={[styles.requestDate, { color: theme.textLight }]}>
-                  Requested: {new Date(request.requestDate).toLocaleDateString()}
-                </Text>
-                <Text style={[styles.requestReason, { color: theme.text }]}>
-                  Reason: {request.reason}
-                </Text>
-              </View>
-              
-              <View style={styles.requestActions}>
-                <TouchableOpacity 
-                  style={[styles.requestButton, styles.approveButton]}
-                  onPress={() => handleAdminRequest(request.userId, request.userName, true)}
-                >
-                  <Text style={styles.requestButtonText}>Approve</Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity 
-                  style={[styles.requestButton, styles.rejectButton, { borderColor: Colors.danger }]}
-                  onPress={() => handleAdminRequest(request.userId, request.userName, false)}
-                >
-                  <Text style={[styles.requestButtonText, styles.rejectButtonText, { color: Colors.danger }]}>Reject</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          ))}
+          <Text style={[styles.filterLabel, { color: theme.text }]}>Filter by role:</Text>
+          
+          <View style={styles.roleFilters}>
+            <TouchableOpacity
+              style={[
+                styles.roleFilterButton,
+                selectedRole === 'admin' && styles.roleFilterButtonActive
+              ]}
+              onPress={() => handleRoleFilter('admin')}
+            >
+              <Text style={[
+                styles.roleFilterText,
+                selectedRole === 'admin' && styles.roleFilterTextActive
+              ]}>Admin</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              style={[
+                styles.roleFilterButton,
+                selectedRole === 'manager' && styles.roleFilterButtonActive
+              ]}
+              onPress={() => handleRoleFilter('manager')}
+            >
+              <Text style={[
+                styles.roleFilterText,
+                selectedRole === 'manager' && styles.roleFilterTextActive
+              ]}>Manager</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              style={[
+                styles.roleFilterButton,
+                selectedRole === 'field' && styles.roleFilterButtonActive
+              ]}
+              onPress={() => handleRoleFilter('field')}
+            >
+              <Text style={[
+                styles.roleFilterText,
+                selectedRole === 'field' && styles.roleFilterTextActive
+              ]}>Field</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              style={[
+                styles.roleFilterButton,
+                selectedRole === 'office' && styles.roleFilterButtonActive
+              ]}
+              onPress={() => handleRoleFilter('office')}
+            >
+              <Text style={[
+                styles.roleFilterText,
+                selectedRole === 'office' && styles.roleFilterTextActive
+              ]}>Office</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              style={[
+                styles.roleFilterButton,
+                selectedRole === 'sales' && styles.roleFilterButtonActive
+              ]}
+              onPress={() => handleRoleFilter('sales')}
+            >
+              <Text style={[
+                styles.roleFilterText,
+                selectedRole === 'sales' && styles.roleFilterTextActive
+              ]}>Sales</Text>
+            </TouchableOpacity>
+          </View>
+          
+          {selectedRole && (
+            <TouchableOpacity 
+              style={styles.clearFilterButton}
+              onPress={() => setSelectedRole(null)}
+            >
+              <Text style={styles.clearFilterText}>Clear Filter</Text>
+            </TouchableOpacity>
+          )}
         </Card>
-      )}
-      
-      {/* Users List */}
-      <Card style={styles.usersCard}>
-        <Text style={[styles.usersTitle, { color: theme.text }]}>All Users</Text>
         
-        <FlatList
-          data={MOCK_USERS}
-          renderItem={renderUserItem}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.usersList}
-          showsVerticalScrollIndicator={false}
-        />
-      </Card>
-      
-      {/* Bottom Navigation Button */}
-      <View style={styles.bottomNavContainer}>
-        <Button
-          title="Return to Settings"
-          onPress={() => router.replace('/(tabs)/settings')}
-          style={styles.bottomNavButton}
-          variant="secondary"
-        />
-      </View>
+        {/* Admin Requests Section */}
+        {adminRequests.length > 0 && (
+          <Card style={styles.requestsCard}>
+            <Text style={[styles.requestsTitle, { color: theme.text }]}>Admin Access Requests</Text>
+            
+            {adminRequests.map((request) => (
+              <View key={request.userId} style={[styles.requestItem, { borderBottomColor: theme.border }]}>
+                <View style={styles.requestInfo}>
+                  <Text style={[styles.requestName, { color: theme.text }]}>{request.userName}</Text>
+                  <Text style={[styles.requestDate, { color: theme.textLight }]}>
+                    Requested: {new Date(request.requestDate).toLocaleDateString()}
+                  </Text>
+                  <Text style={[styles.requestReason, { color: theme.text }]}>
+                    Reason: {request.reason}
+                  </Text>
+                </View>
+                
+                <View style={styles.requestActions}>
+                  <TouchableOpacity 
+                    style={[styles.requestButton, styles.approveButton]}
+                    onPress={() => handleAdminRequest(request.userId, request.userName, true)}
+                  >
+                    <Text style={styles.requestButtonText}>Approve</Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity 
+                    style={[styles.requestButton, styles.rejectButton, { borderColor: Colors.danger }]}
+                    onPress={() => handleAdminRequest(request.userId, request.userName, false)}
+                  >
+                    <Text style={[styles.requestButtonText, styles.rejectButtonText, { color: Colors.danger }]}>Reject</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ))}
+          </Card>
+        )}
+        
+        {/* Users List */}
+        <Card style={styles.usersCard}>
+          <View style={styles.usersHeader}>
+            <Text style={[styles.usersTitle, { color: theme.text }]}>All Users</Text>
+            <Text style={[styles.usersCount, { color: theme.textLight }]}>
+              {filteredUsers.length} {filteredUsers.length === 1 ? 'user' : 'users'}
+            </Text>
+          </View>
+          
+          {filteredUsers.length > 0 ? (
+            <FlatList
+              data={filteredUsers}
+              renderItem={renderUserItem}
+              keyExtractor={(item) => item.id}
+              contentContainerStyle={styles.usersList}
+              scrollEnabled={false}
+            />
+          ) : (
+            <View style={styles.emptyState}>
+              <Text style={[styles.emptyStateText, { color: theme.textLight }]}>
+                No users found matching your criteria
+              </Text>
+            </View>
+          )}
+        </Card>
+        
+        {/* Bottom Navigation Button */}
+        <View style={styles.bottomNavContainer}>
+          <Button
+            title="Return to Settings"
+            onPress={() => router.replace('/(tabs)/settings')}
+            style={styles.bottomNavButton}
+            variant="secondary"
+          />
+        </View>
+      </ScrollView>
     </View>
   );
 }
@@ -305,7 +411,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.background,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  contentContainer: {
     padding: 16,
+    paddingBottom: 40,
   },
   header: {
     marginBottom: 16,
@@ -320,23 +432,69 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.textLight,
   },
-  navigationButtons: {
+  actionButtons: {
     flexDirection: 'row',
     marginBottom: 16,
-    gap: 12,
   },
-  navButton: {
+  actionButton: {
+    flex: 1,
+  },
+  searchCard: {
+    marginBottom: 16,
+  },
+  searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 12,
-    borderRadius: 8,
-    backgroundColor: Colors.card,
-    gap: 8,
+    marginBottom: 16,
   },
-  navButtonText: {
+  searchIcon: {
+    marginRight: 8,
+  },
+  searchInput: {
+    flex: 1,
+    height: 40,
+  },
+  searchInputContainer: {
+    flex: 1,
+    marginBottom: 0,
+  },
+  filterLabel: {
     fontSize: 14,
     fontWeight: '500',
     color: Colors.text,
+    marginBottom: 8,
+  },
+  roleFilters: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 8,
+  },
+  roleFilterButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    backgroundColor: Colors.background,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  roleFilterButtonActive: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
+  },
+  roleFilterText: {
+    fontSize: 12,
+    color: Colors.text,
+  },
+  roleFilterTextActive: {
+    color: '#FFFFFF',
+  },
+  clearFilterButton: {
+    alignSelf: 'flex-start',
+  },
+  clearFilterText: {
+    fontSize: 12,
+    color: Colors.primary,
   },
   requestsCard: {
     marginBottom: 16,
@@ -400,11 +558,20 @@ const styles = StyleSheet.create({
   usersCard: {
     flex: 1,
   },
+  usersHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
   usersTitle: {
     fontSize: 16,
     fontWeight: 'bold',
     color: Colors.text,
-    marginBottom: 16,
+  },
+  usersCount: {
+    fontSize: 12,
+    color: Colors.textLight,
   },
   usersList: {
     paddingBottom: 16,
@@ -442,6 +609,12 @@ const styles = StyleSheet.create({
   userEmail: {
     fontSize: 12,
     color: Colors.textLight,
+    marginBottom: 2,
+  },
+  userTitle: {
+    fontSize: 12,
+    color: Colors.textLight,
+    fontStyle: 'italic',
   },
   userRole: {
     marginRight: 12,
@@ -504,5 +677,14 @@ const styles = StyleSheet.create({
   },
   bottomNavButton: {
     width: '100%',
+  },
+  emptyState: {
+    padding: 24,
+    alignItems: 'center',
+  },
+  emptyStateText: {
+    fontSize: 14,
+    color: Colors.textLight,
+    textAlign: 'center',
   },
 });

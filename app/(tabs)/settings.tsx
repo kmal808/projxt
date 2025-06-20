@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { 
   User, Moon, Sun, Bell, Shield, HelpCircle, Info, 
-  LogOut, ChevronRight, Settings as SettingsIcon, Users
+  LogOut, ChevronRight, Settings as SettingsIcon, Users, UserPlus
 } from 'lucide-react-native';
 import Colors from '@/constants/colors';
 import { useAuthStore } from '@/store/auth-store';
@@ -89,35 +89,12 @@ export default function SettingsScreen() {
     router.push('/user-management');
   };
   
+  const navigateToInviteUser = () => {
+    router.push('/invite-user');
+  };
+  
   const requestAdminAccess = () => {
-    Alert.prompt(
-      'Request Admin Access',
-      'Please provide a reason for requesting admin access:',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Submit',
-          onPress: async (reason) => {
-            if (!reason) {
-              Alert.alert('Error', 'Please provide a reason for your request.');
-              return;
-            }
-            
-            try {
-              const { requestAdminAccess } = useAuthStore.getState();
-              await requestAdminAccess(reason);
-              Alert.alert(
-                'Request Submitted',
-                'Your request for admin access has been submitted and is pending approval.'
-              );
-            } catch (error) {
-              Alert.alert('Error', 'Failed to submit admin access request.');
-            }
-          }
-        }
-      ],
-      'plain-text'
-    );
+    router.push('/request-admin');
   };
   
   return (
@@ -227,6 +204,43 @@ export default function SettingsScreen() {
               <View style={styles.settingContent}>
                 <Text style={styles.settingTitle}>User Management</Text>
                 <Text style={styles.settingDescription}>Manage users and roles</Text>
+              </View>
+              <ChevronRight size={20} color={Colors.textLight} />
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={[styles.settingItem, styles.settingItem_last]}
+              onPress={navigateToInviteUser}
+            >
+              <View style={styles.settingIconContainer}>
+                <UserPlus size={20} color={Colors.primary} />
+              </View>
+              <View style={styles.settingContent}>
+                <Text style={styles.settingTitle}>Invite User</Text>
+                <Text style={styles.settingDescription}>Send invitation to new team members</Text>
+              </View>
+              <ChevronRight size={20} color={Colors.textLight} />
+            </TouchableOpacity>
+          </Card>
+        </>
+      )}
+      
+      {/* Manager Section - Only visible to managers */}
+      {user?.role === 'manager' && (
+        <>
+          <Text style={styles.sectionTitle}>Team Management</Text>
+          
+          <Card>
+            <TouchableOpacity 
+              style={styles.settingItem}
+              onPress={navigateToInviteUser}
+            >
+              <View style={styles.settingIconContainer}>
+                <UserPlus size={20} color={Colors.primary} />
+              </View>
+              <View style={styles.settingContent}>
+                <Text style={styles.settingTitle}>Invite User</Text>
+                <Text style={styles.settingDescription}>Send invitation to new team members</Text>
               </View>
               <ChevronRight size={20} color={Colors.textLight} />
             </TouchableOpacity>
