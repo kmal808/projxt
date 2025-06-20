@@ -243,14 +243,14 @@ export default function UserManagementScreen() {
         <Button
           title="Approve"
           onPress={() => handleApproveAdminRequest(item.userId, item.userName)}
-          type="success"
+          variant="success"
           style={styles.requestButton}
         />
         
         <Button
           title="Reject"
           onPress={() => handleRejectAdminRequest(item.userId, item.userName)}
-          type="error"
+          variant="error"
           style={styles.requestButton}
         />
       </View>

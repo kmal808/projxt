@@ -1,5 +1,5 @@
 import { createTRPCRouter } from "./create-context";
-import hiRoute from "./routes/example/hi/route";
+import { hiProcedure } from "./routes/example/hi/route";
 import { registerProcedure } from "./routes/auth/register";
 import { loginProcedure } from "./routes/auth/login";
 import { verifyEmailProcedure } from "./routes/auth/verify-email";
@@ -14,7 +14,7 @@ import {
 
 export const appRouter = createTRPCRouter({
   example: createTRPCRouter({
-    hi: hiRoute,
+    hi: hiProcedure,
   }),
   auth: createTRPCRouter({
     register: registerProcedure,

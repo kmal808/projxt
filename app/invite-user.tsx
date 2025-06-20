@@ -108,7 +108,7 @@ export default function InviteUserScreen() {
                   styles.roleButtonText,
                   role === 'field' ? styles.roleButtonTextActive : null,
                 ]}
-                type={role === 'field' ? 'primary' : 'outline'}
+                variant={role === 'field' ? 'primary' : 'outline'}
               />
               
               <Button
@@ -122,7 +122,7 @@ export default function InviteUserScreen() {
                   styles.roleButtonText,
                   role === 'office' ? styles.roleButtonTextActive : null,
                 ]}
-                type={role === 'office' ? 'primary' : 'outline'}
+                variant={role === 'office' ? 'primary' : 'outline'}
               />
               
               <Button
@@ -136,7 +136,7 @@ export default function InviteUserScreen() {
                   styles.roleButtonText,
                   role === 'manager' ? styles.roleButtonTextActive : null,
                 ]}
-                type={role === 'manager' ? 'primary' : 'outline'}
+                variant={role === 'manager' ? 'primary' : 'outline'}
               />
               
               <Button
@@ -150,7 +150,7 @@ export default function InviteUserScreen() {
                   styles.roleButtonText,
                   role === 'sales' ? styles.roleButtonTextActive : null,
                 ]}
-                type={role === 'sales' ? 'primary' : 'outline'}
+                variant={role === 'sales' ? 'primary' : 'outline'}
               />
               
               <Button
@@ -164,7 +164,7 @@ export default function InviteUserScreen() {
                   styles.roleButtonText,
                   role === 'admin' ? styles.roleButtonTextActive : null,
                 ]}
-                type={role === 'admin' ? 'primary' : 'outline'}
+                variant={role === 'admin' ? 'primary' : 'outline'}
               />
             </View>
           </View>

@@ -14,3 +14,5 @@ export const hiProcedure = publicProcedure
       date: new Date().toISOString(),
     };
   });
+
+export default hiProcedure;

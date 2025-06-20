@@ -6,6 +6,7 @@ export default {
   accent: '#F59E0B', // Amber
   success: '#10B981', // Emerald
   danger: '#EF4444', // Red
+  error: '#EF4444', // Red (alias for danger)
   warning: '#F59E0B', // Amber
   info: '#3B82F6', // Blue
   background: '#F8FAFC', // Light background

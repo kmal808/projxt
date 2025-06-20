@@ -13,7 +13,7 @@ import Colors from '@/constants/colors';
 export interface ButtonProps {
   title: string;
   onPress: () => void;
-  variant?: 'primary' | 'secondary' | 'outline' | 'danger' | 'success';
+  variant?: 'primary' | 'secondary' | 'outline' | 'danger' | 'success' | 'error';
   size?: 'small' | 'medium' | 'large';
   loading?: boolean;
   disabled?: boolean;
@@ -47,6 +47,8 @@ const Button: React.FC<ButtonProps> = ({
         return styles.dangerButton;
       case 'success':
         return styles.successButton;
+      case 'error':
+        return styles.errorButton;
       default:
         return styles.primaryButton;
     }
@@ -64,6 +66,8 @@ const Button: React.FC<ButtonProps> = ({
         return styles.dangerText;
       case 'success':
         return styles.successText;
+      case 'error':
+        return styles.errorText;
       default:
         return styles.primaryText;
     }
@@ -178,6 +182,12 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.success,
   },
   successText: {
+    color: '#FFFFFF',
+  },
+  errorButton: {
+    backgroundColor: Colors.error,
+  },
+  errorText: {
     color: '#FFFFFF',
   },
   // Sizes

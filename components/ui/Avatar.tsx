@@ -5,14 +5,14 @@ import Colors from '@/constants/colors';
 interface AvatarProps {
   name: string;
   size?: number;
-  imageUrl?: string;
+  uri?: string;
   backgroundColor?: string;
 }
 
 export const Avatar: React.FC<AvatarProps> = ({
   name,
   size = 40,
-  imageUrl,
+  uri,
   backgroundColor,
 }) => {
   // Get initials from name
@@ -53,13 +53,13 @@ export const Avatar: React.FC<AvatarProps> = ({
           width: size,
           height: size,
           borderRadius: size / 2,
-          backgroundColor: imageUrl ? 'transparent' : getRandomColor(),
+          backgroundColor: uri ? 'transparent' : getRandomColor(),
         },
       ]}
     >
-      {imageUrl ? (
+      {uri ? (
         <Image
-          source={{ uri: imageUrl }}
+          source={{ uri }}
           style={{
             width: size,
             height: size,
