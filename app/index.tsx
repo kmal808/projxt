@@ -1,12 +1,12 @@
 import React, { useEffect } from 'react';
-import { View, StyleSheet, Text, ScrollView, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, Text, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuthStore } from '@/store/auth-store';
 import LoginForm from '@/components/LoginForm';
 import Colors from '@/constants/colors';
-import { HardHat, Building, Hammer, Users, Briefcase, BarChart3, ChevronRight } from 'lucide-react-native';
+import { HardHat, Building, Hammer, Users, Briefcase, BarChart3 } from 'lucide-react-native';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -83,20 +83,6 @@ export default function LoginScreen() {
             </View>
           </View>
         </View>
-        
-        {/* Enterprise Section */}
-        <TouchableOpacity 
-          style={styles.enterpriseCard}
-          onPress={() => router.push('https://projxt.com/enterprise')}
-        >
-          <View style={styles.enterpriseContent}>
-            <Text style={styles.enterpriseTitle}>Need Enterprise Features?</Text>
-            <Text style={styles.enterpriseText}>
-              Contact us for custom deployment, advanced security, and dedicated support
-            </Text>
-          </View>
-          <ChevronRight size={20} color={Colors.primary} />
-        </TouchableOpacity>
       </ScrollView>
     </View>
   );
@@ -176,28 +162,5 @@ const styles = StyleSheet.create({
   featureText: {
     fontSize: 14,
     color: Colors.text,
-  },
-  enterpriseCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    backgroundColor: Colors.primary + '10',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: Colors.primary + '30',
-    marginBottom: 16,
-  },
-  enterpriseContent: {
-    flex: 1,
-  },
-  enterpriseTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: Colors.text,
-    marginBottom: 4,
-  },
-  enterpriseText: {
-    fontSize: 14,
-    color: Colors.textLight,
   },
 });

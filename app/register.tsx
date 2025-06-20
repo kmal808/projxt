@@ -1,56 +1,70 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert, TouchableOpacity } from 'react-native';
-import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
-import { ArrowLeft, User, Mail, Lock, Phone, Briefcase } from 'lucide-react-native';
-import Colors from '@/constants/colors';
+import { View, StyleSheet, Text, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import { useAuthStore } from '@/store/auth-store';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
-import { useAuthStore } from '@/store/auth-store';
+import Colors from '@/constants/colors';
+import { Mail, Lock, User, Phone, Briefcase } from 'lucide-react-native';
 
 export default function RegisterScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const { inviteCode, email: invitedEmail, role: invitedRole } = params;
   
-  const { register } = useAuthStore();
+  // Get invite parameters if they exist
+  const inviteCode = params.inviteCode as string | undefined;
+  const inviteEmail = params.email as string | undefined;
+  const inviteRole = params.role as string | undefined;
   
-  const [formData, setFormData] = useState({
-    name: '',
-    email: invitedEmail as string || '',
-    password: '',
-    confirmPassword: '',
-    phone: '',
-    title: '',
-  });
-  
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState(inviteEmail || '');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [phone, setPhone] = useState('');
+  const [title, setTitle] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState<{
+    name?: string;
+    email?: string;
+    password?: string;
+    confirmPassword?: string;
+  }>({});
   
+  const register = useAuthStore((state) => state.register);
+
   const validateForm = () => {
-    const newErrors: Record<string, string> = {};
+    const newErrors: {
+      name?: string;
+      email?: string;
+      password?: string;
+      confirmPassword?: string;
+    } = {};
     
-    if (!formData.name) newErrors.name = 'Name is required';
+    if (!name) {
+      newErrors.name = 'Name is required';
+    }
     
-    if (!formData.email) {
+    if (!email) {
       newErrors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+    } else if (!/\S+@\S+\.\S+/.test(email)) {
       newErrors.email = 'Email is invalid';
     }
     
-    if (!formData.password) {
+    if (!password) {
       newErrors.password = 'Password is required';
-    } else if (formData.password.length < 8) {
+    } else if (password.length < 8) {
       newErrors.password = 'Password must be at least 8 characters';
     }
     
-    if (formData.password !== formData.confirmPassword) {
+    if (password !== confirmPassword) {
       newErrors.confirmPassword = 'Passwords do not match';
     }
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-  
+
   const handleRegister = async () => {
     if (!validateForm()) return;
     
@@ -58,96 +72,88 @@ export default function RegisterScreen() {
     
     try {
       await register({
-        name: formData.name,
-        email: formData.email,
-        password: formData.password,
-        phone: formData.phone,
-        title: formData.title,
-        inviteCode: inviteCode as string,
-        role: invitedRole as any || 'field',
+        name,
+        email,
+        password,
+        phone: phone || undefined,
+        title: title || undefined,
+        inviteCode,
+        role: inviteRole as any || undefined,
       });
       
       Alert.alert(
         'Registration Successful',
-        'Your account has been created successfully. Please verify your email to continue.',
+        'Please check your email to verify your account.',
         [
-          { 
-            text: 'OK', 
-            onPress: () => router.replace('/') 
-          }
+          {
+            text: 'OK',
+            onPress: () => router.push('/'),
+          },
         ]
       );
     } catch (error: any) {
+      console.error('Registration error:', error);
       Alert.alert('Registration Failed', error.message || 'An error occurred during registration');
     } finally {
       setIsLoading(false);
     }
   };
-  
-  const updateFormField = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    // Clear error when user types
-    if (errors[field]) {
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[field];
-        return newErrors;
-      });
-    }
-  };
-  
+
   return (
     <View style={styles.container}>
-      <Stack.Screen 
-        options={{ 
-          title: 'Create Account',
-          headerLeft: () => (
-            <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-              <ArrowLeft size={24} color={Colors.text} />
-            </TouchableOpacity>
-          )
-        }} 
-      />
+      <StatusBar style="dark" />
+      
+      <Stack.Screen options={{ 
+        title: 'Create Account',
+        headerBackTitle: 'Back',
+      }} />
       
       <ScrollView 
-        style={styles.scrollView}
-        contentContainerStyle={styles.contentContainer}
+        style={styles.content}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.title}>Create Your Account</Text>
-        <Text style={styles.subtitle}>
-          {inviteCode 
-            ? 'Complete your registration to join your team' 
-            : 'Sign up to start managing your projects'}
+        <Text style={styles.title}>
+          {inviteCode ? 'Complete Your Registration' : 'Create a New Account'}
         </Text>
+        
+        {inviteCode ? (
+          <Text style={styles.subtitle}>
+            You've been invited to join Projxt. Please complete your registration below.
+          </Text>
+        ) : (
+          <Text style={styles.subtitle}>
+            Fill in your details to create your account
+          </Text>
+        )}
         
         <View style={styles.form}>
           <Input
             label="Full Name"
             placeholder="Enter your full name"
-            value={formData.name}
-            onChangeText={(value) => updateFormField('name', value)}
+            value={name}
+            onChangeText={setName}
             error={errors.name}
             leftIcon={<User size={18} color={Colors.textLight} />}
           />
           
           <Input
             label="Email"
-            placeholder="Enter your email address"
-            value={formData.email}
-            onChangeText={(value) => updateFormField('email', value)}
+            placeholder="Enter your email"
+            value={email}
+            onChangeText={setEmail}
             keyboardType="email-address"
             autoCapitalize="none"
             error={errors.email}
-            editable={!invitedEmail}
+            editable={!inviteEmail} // If invited, email is not editable
             leftIcon={<Mail size={18} color={Colors.textLight} />}
           />
           
           <Input
             label="Password"
             placeholder="Create a password"
-            value={formData.password}
-            onChangeText={(value) => updateFormField('password', value)}
+            value={password}
+            onChangeText={setPassword}
             secureTextEntry
             error={errors.password}
             leftIcon={<Lock size={18} color={Colors.textLight} />}
@@ -156,18 +162,18 @@ export default function RegisterScreen() {
           <Input
             label="Confirm Password"
             placeholder="Confirm your password"
-            value={formData.confirmPassword}
-            onChangeText={(value) => updateFormField('confirmPassword', value)}
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
             secureTextEntry
             error={errors.confirmPassword}
             leftIcon={<Lock size={18} color={Colors.textLight} />}
           />
           
           <Input
-            label="Phone Number (Optional)"
+            label="Phone (Optional)"
             placeholder="Enter your phone number"
-            value={formData.phone}
-            onChangeText={(value) => updateFormField('phone', value)}
+            value={phone}
+            onChangeText={setPhone}
             keyboardType="phone-pad"
             leftIcon={<Phone size={18} color={Colors.textLight} />}
           />
@@ -175,8 +181,8 @@ export default function RegisterScreen() {
           <Input
             label="Job Title (Optional)"
             placeholder="Enter your job title"
-            value={formData.title}
-            onChangeText={(value) => updateFormField('title', value)}
+            value={title}
+            onChangeText={setTitle}
             leftIcon={<Briefcase size={18} color={Colors.textLight} />}
           />
           
@@ -187,9 +193,9 @@ export default function RegisterScreen() {
             style={styles.button}
           />
           
-          <View style={styles.loginLinkContainer}>
+          <View style={styles.loginContainer}>
             <Text style={styles.loginText}>Already have an account?</Text>
-            <TouchableOpacity onPress={() => router.replace('/')}>
+            <TouchableOpacity onPress={() => router.push('/')}>
               <Text style={styles.loginLink}>Sign In</Text>
             </TouchableOpacity>
           </View>
@@ -204,13 +210,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
-  backButton: {
-    padding: 8,
-  },
-  scrollView: {
+  content: {
     flex: 1,
   },
-  contentContainer: {
+  scrollContent: {
     padding: 24,
     paddingBottom: 40,
   },
@@ -221,7 +224,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 14,
     color: Colors.textLight,
     marginBottom: 24,
   },
@@ -231,7 +234,7 @@ const styles = StyleSheet.create({
   button: {
     marginTop: 8,
   },
-  loginLinkContainer: {
+  loginContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
     marginTop: 24,

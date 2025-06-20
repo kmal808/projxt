@@ -1,96 +1,94 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, Alert } from 'react-native';
-import { Stack } from 'expo-router';
-import { useRouter } from 'expo-router';
-import { ArrowLeft, Shield } from 'lucide-react-native';
-import Colors from '@/constants/colors';
-import Button from '@/components/ui/Button';
+import { View, StyleSheet, Text, Alert, TextInput } from 'react-native';
+import { useRouter, Stack } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import { useAuthStore } from '@/store/auth-store';
+import Button from '@/components/ui/Button';
+import Colors from '@/constants/colors';
+import { ShieldCheck } from 'lucide-react-native';
 
 export default function RequestAdminScreen() {
   const router = useRouter();
-  const { user, requestAdminAccess } = useAuthStore();
-  const [reason, setReason] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
   
-  const handleSubmit = async () => {
-    if (!reason.trim()) {
-      Alert.alert('Error', 'Please provide a reason for your request.');
-      return;
+  const [reason, setReason] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  const requestAdminAccess = useAuthStore((state) => state.requestAdminAccess);
+
+  const validateForm = () => {
+    if (!reason || reason.trim().length < 10) {
+      setError('Please provide a detailed reason (at least 10 characters)');
+      return false;
     }
     
-    setIsSubmitting(true);
+    setError(null);
+    return true;
+  };
+
+  const handleRequest = async () => {
+    if (!validateForm()) return;
+    
+    setIsLoading(true);
     
     try {
       await requestAdminAccess(reason);
+      
       Alert.alert(
         'Request Submitted',
-        'Your request for admin access has been submitted and is pending approval.',
-        [{ text: 'OK', onPress: () => router.back() }]
+        'Your request for admin access has been submitted. You will be notified when it is reviewed.',
+        [
+          {
+            text: 'OK',
+            onPress: () => router.back(),
+          },
+        ]
       );
-    } catch (error) {
-      Alert.alert('Error', 'Failed to submit admin access request.');
+    } catch (error: any) {
+      console.error('Admin request error:', error);
+      Alert.alert('Request Failed', error.message || 'An error occurred while submitting your request');
     } finally {
-      setIsSubmitting(false);
+      setIsLoading(false);
     }
   };
-  
+
   return (
     <View style={styles.container}>
-      <Stack.Screen 
-        options={{ 
-          title: 'Request Admin Access',
-          headerLeft: () => (
-            <Button
-              title=""
-              onPress={() => router.back()}
-              variant="outline"
-              size="small"
-              leftIcon={<ArrowLeft size={20} color={Colors.text} />}
-              style={styles.backButton}
-            />
-          )
-        }} 
-      />
+      <StatusBar style="dark" />
+      
+      <Stack.Screen options={{ 
+        title: 'Request Admin Access',
+        headerBackTitle: 'Back',
+      }} />
       
       <View style={styles.content}>
         <View style={styles.iconContainer}>
-          <Shield size={48} color={Colors.primary} />
+          <ShieldCheck size={48} color={Colors.primary} />
         </View>
         
         <Text style={styles.title}>Request Admin Access</Text>
-        
-        <Text style={styles.description}>
-          Admin access provides additional privileges including user management, system configuration, and advanced reporting capabilities.
+        <Text style={styles.subtitle}>
+          Admin access provides additional privileges for managing users, projects, and system settings.
+          Please explain why you need admin access.
         </Text>
         
-        <Text style={styles.label}>Why do you need admin access?</Text>
-        <TextInput
-          style={styles.input}
-          value={reason}
-          onChangeText={setReason}
-          placeholder="Explain why you need admin privileges..."
-          multiline
-          numberOfLines={5}
-          textAlignVertical="top"
-        />
-        
-        <Text style={styles.note}>
-          Your request will be reviewed by an existing administrator. You will be notified once a decision has been made.
-        </Text>
-        
-        <View style={styles.buttonContainer}>
-          <Button
-            title="Cancel"
-            onPress={() => router.back()}
-            variant="outline"
-            style={styles.button}
+        <View style={styles.form}>
+          <Text style={styles.label}>Reason for Request</Text>
+          <TextInput
+            style={[styles.textArea, error ? styles.textAreaError : null]}
+            placeholder="Explain why you need admin access..."
+            value={reason}
+            onChangeText={setReason}
+            multiline
+            numberOfLines={6}
+            textAlignVertical="top"
           />
+          {error && <Text style={styles.errorText}>{error}</Text>}
           
           <Button
             title="Submit Request"
-            onPress={handleSubmit}
-            loading={isSubmitting}
+            onPress={handleRequest}
+            loading={isLoading}
             style={styles.button}
           />
         </View>
@@ -104,9 +102,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
-  backButton: {
-    marginLeft: 8,
-  },
   content: {
     flex: 1,
     padding: 24,
@@ -119,44 +114,41 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     color: Colors.text,
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  description: {
-    fontSize: 16,
-    color: Colors.text,
-    marginBottom: 24,
-    textAlign: 'center',
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: Colors.text,
     marginBottom: 8,
   },
-  input: {
+  subtitle: {
+    fontSize: 14,
+    color: Colors.textLight,
+    marginBottom: 24,
+  },
+  form: {
+    gap: 16,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: Colors.text,
+    marginBottom: 4,
+  },
+  textArea: {
     backgroundColor: Colors.card,
     borderWidth: 1,
     borderColor: Colors.border,
     borderRadius: 8,
     padding: 12,
-    fontSize: 16,
+    fontSize: 14,
     color: Colors.text,
     minHeight: 120,
-    marginBottom: 16,
   },
-  note: {
-    fontSize: 14,
-    color: Colors.textLight,
-    fontStyle: 'italic',
-    marginBottom: 32,
+  textAreaError: {
+    borderColor: Colors.error,
   },
-  buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  errorText: {
+    fontSize: 12,
+    color: Colors.error,
+    marginTop: -8,
   },
   button: {
-    flex: 1,
-    marginHorizontal: 8,
+    marginTop: 16,
   },
 });

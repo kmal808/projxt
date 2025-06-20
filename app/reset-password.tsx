@@ -1,44 +1,33 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Alert, TouchableOpacity } from 'react-native';
-import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
-import { ArrowLeft, Lock } from 'lucide-react-native';
-import Colors from '@/constants/colors';
+import { View, StyleSheet, Text, Alert, TouchableOpacity } from 'react-native';
+import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import { useAuthStore } from '@/store/auth-store';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
-import { useAuthStore } from '@/store/auth-store';
+import Colors from '@/constants/colors';
+import { Mail, Lock } from 'lucide-react-native';
 
 export default function ResetPasswordScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const { token } = params;
-  
-  const { resetPassword, requestPasswordReset } = useAuthStore();
+  const token = params.token as string | undefined;
   
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState<{
+    email?: string;
+    newPassword?: string;
+    confirmPassword?: string;
+  }>({});
   
-  const validateResetForm = () => {
-    const newErrors: Record<string, string> = {};
-    
-    if (!password) {
-      newErrors.password = 'Password is required';
-    } else if (password.length < 8) {
-      newErrors.password = 'Password must be at least 8 characters';
-    }
-    
-    if (password !== confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
-    }
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-  
+  const requestPasswordReset = useAuthStore((state) => state.requestPasswordReset);
+  const resetPassword = useAuthStore((state) => state.resetPassword);
+
   const validateRequestForm = () => {
-    const newErrors: Record<string, string> = {};
+    const newErrors: { email?: string } = {};
     
     if (!email) {
       newErrors.email = 'Email is required';
@@ -49,32 +38,27 @@ export default function ResetPasswordScreen() {
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-  
-  const handleResetPassword = async () => {
-    if (!validateResetForm()) return;
+
+  const validateResetForm = () => {
+    const newErrors: {
+      newPassword?: string;
+      confirmPassword?: string;
+    } = {};
     
-    setIsLoading(true);
-    
-    try {
-      await resetPassword(token as string, password);
-      
-      Alert.alert(
-        'Password Reset Successful',
-        'Your password has been reset successfully. You can now log in with your new password.',
-        [
-          { 
-            text: 'OK', 
-            onPress: () => router.replace('/') 
-          }
-        ]
-      );
-    } catch (error: any) {
-      Alert.alert('Password Reset Failed', error.message || 'An error occurred during password reset');
-    } finally {
-      setIsLoading(false);
+    if (!newPassword) {
+      newErrors.newPassword = 'New password is required';
+    } else if (newPassword.length < 8) {
+      newErrors.newPassword = 'Password must be at least 8 characters';
     }
+    
+    if (newPassword !== confirmPassword) {
+      newErrors.confirmPassword = 'Passwords do not match';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
-  
+
   const handleRequestReset = async () => {
     if (!validateRequestForm()) return;
     
@@ -84,64 +68,81 @@ export default function ResetPasswordScreen() {
       await requestPasswordReset(email);
       
       Alert.alert(
-        'Password Reset Email Sent',
-        'If an account exists with this email, you will receive a password reset link shortly.',
+        'Reset Email Sent',
+        'If an account exists with this email, you will receive password reset instructions.',
         [
-          { 
-            text: 'OK', 
-            onPress: () => router.replace('/') 
-          }
+          {
+            text: 'OK',
+            onPress: () => router.push('/'),
+          },
         ]
       );
     } catch (error: any) {
-      // Don't show specific errors for security reasons
-      Alert.alert(
-        'Password Reset Email Sent',
-        'If an account exists with this email, you will receive a password reset link shortly.'
-      );
+      console.error('Password reset request error:', error);
+      Alert.alert('Request Failed', error.message || 'An error occurred during the request');
     } finally {
       setIsLoading(false);
     }
   };
-  
-  // If token is provided, show reset password form
-  // Otherwise, show request reset form
+
+  const handleResetPassword = async () => {
+    if (!validateResetForm() || !token) return;
+    
+    setIsLoading(true);
+    
+    try {
+      await resetPassword(token, newPassword);
+      
+      Alert.alert(
+        'Password Reset Successful',
+        'Your password has been reset. You can now log in with your new password.',
+        [
+          {
+            text: 'Sign In',
+            onPress: () => router.push('/'),
+          },
+        ]
+      );
+    } catch (error: any) {
+      console.error('Password reset error:', error);
+      Alert.alert('Reset Failed', error.message || 'An error occurred during password reset');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <View style={styles.container}>
-      <Stack.Screen 
-        options={{ 
-          title: token ? 'Reset Password' : 'Forgot Password',
-          headerLeft: () => (
-            <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-              <ArrowLeft size={24} color={Colors.text} />
-            </TouchableOpacity>
-          )
-        }} 
-      />
+      <StatusBar style="dark" />
+      
+      <Stack.Screen options={{ 
+        title: token ? 'Reset Password' : 'Forgot Password',
+        headerBackTitle: 'Back',
+      }} />
       
       <View style={styles.content}>
         {token ? (
-          // Reset Password Form
+          // Reset password form
           <>
-            <Text style={styles.title}>Reset Your Password</Text>
+            <Text style={styles.title}>Create New Password</Text>
             <Text style={styles.subtitle}>
-              Please enter your new password below
+              Enter your new password below
             </Text>
             
             <View style={styles.form}>
               <Input
                 label="New Password"
-                placeholder="Enter your new password"
-                value={password}
-                onChangeText={setPassword}
+                placeholder="Enter new password"
+                value={newPassword}
+                onChangeText={setNewPassword}
                 secureTextEntry
-                error={errors.password}
+                error={errors.newPassword}
                 leftIcon={<Lock size={18} color={Colors.textLight} />}
               />
               
               <Input
                 label="Confirm Password"
-                placeholder="Confirm your new password"
+                placeholder="Confirm new password"
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
                 secureTextEntry
@@ -158,22 +159,23 @@ export default function ResetPasswordScreen() {
             </View>
           </>
         ) : (
-          // Request Reset Form
+          // Request reset form
           <>
-            <Text style={styles.title}>Forgot Your Password?</Text>
+            <Text style={styles.title}>Forgot Password?</Text>
             <Text style={styles.subtitle}>
-              Enter your email address and we'll send you a link to reset your password
+              Enter your email address and we'll send you instructions to reset your password
             </Text>
             
             <View style={styles.form}>
               <Input
                 label="Email"
-                placeholder="Enter your email address"
+                placeholder="Enter your email"
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 error={errors.email}
+                leftIcon={<Mail size={18} color={Colors.textLight} />}
               />
               
               <Button
@@ -183,12 +185,12 @@ export default function ResetPasswordScreen() {
                 style={styles.button}
               />
               
-              <TouchableOpacity 
-                style={styles.backToLoginButton}
-                onPress={() => router.replace('/')}
-              >
-                <Text style={styles.backToLoginText}>Back to Login</Text>
-              </TouchableOpacity>
+              <View style={styles.loginContainer}>
+                <Text style={styles.loginText}>Remember your password?</Text>
+                <TouchableOpacity onPress={() => router.push('/')}>
+                  <Text style={styles.loginLink}>Sign In</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </>
         )}
@@ -202,9 +204,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
-  backButton: {
-    padding: 8,
-  },
   content: {
     flex: 1,
     padding: 24,
@@ -216,7 +215,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 14,
     color: Colors.textLight,
     marginBottom: 24,
   },
@@ -226,13 +225,19 @@ const styles = StyleSheet.create({
   button: {
     marginTop: 8,
   },
-  backToLoginButton: {
-    alignItems: 'center',
-    marginTop: 16,
+  loginContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 24,
   },
-  backToLoginText: {
-    fontSize: 16,
-    color: Colors.primary,
+  loginText: {
+    fontSize: 14,
+    color: Colors.textLight,
+  },
+  loginLink: {
+    fontSize: 14,
     fontWeight: '500',
+    color: Colors.primary,
+    marginLeft: 4,
   },
 });
