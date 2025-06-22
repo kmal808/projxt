@@ -13,22 +13,13 @@ interface SubscriptionState {
   error: string | null;
   isConnected: boolean;
 
-  // Setup
   connect: () => Promise<void>;
   disconnect: () => Promise<void>;
-  
-  // Fetch current subscription
   fetchSubscription: () => Promise<void>;
-  
-  // Fetch current usage
   fetchUsage: () => Promise<void>;
-  
-  // Check if action is allowed based on current limits
   canAddProject: () => boolean;
   canAddCrew: () => boolean;
   canInviteTeamMember: () => boolean;
-  
-  // Subscription management
   purchaseSubscription: (productId: string) => Promise<void>;
   restorePurchases: () => Promise<void>;
   validateReceipt: () => Promise<void>;
@@ -49,25 +40,22 @@ export const useSubscriptionStore = create<SubscriptionState>()(
         try {
           await InAppPurchases.connectAsync();
           
-          // Get available products
-          const { responseCode, results } = await InAppPurchases.getProductsAsync(PRODUCT_IDS);
+          const response = await InAppPurchases.getProductsAsync(PRODUCT_IDS);
           
-          if (responseCode === InAppPurchases.IAPResponseCode.OK) {
-            console.log('Products loaded:', results);
+          if (response?.responseCode === InAppPurchases.IAPResponseCode.OK && response.results) {
+            console.log('Products loaded:', response.results);
           }
           
-          // Setup purchase listener
           InAppPurchases.setPurchaseListener(({ responseCode, results }) => {
-            if (responseCode === InAppPurchases.IAPResponseCode.OK) {
+            if (responseCode === InAppPurchases.IAPResponseCode.OK && results) {
               results.forEach(async (purchase) => {
                 if (!purchase.acknowledged) {
-                  // Process the purchase
                   const plan = SUBSCRIPTION_PLANS.find(p => p.productId === purchase.productId);
                   if (plan) {
                     set({
                       subscription: {
                         id: purchase.orderId,
-                        userId: 'current-user', // Replace with actual user ID
+                        userId: 'current-user',
                         planId: plan.id,
                         tier: plan.tier,
                         status: 'active',
@@ -78,7 +66,6 @@ export const useSubscriptionStore = create<SubscriptionState>()(
                     });
                   }
                   
-                  // Finish the transaction
                   await InAppPurchases.finishTransactionAsync(purchase, false);
                 }
               });
@@ -105,7 +92,6 @@ export const useSubscriptionStore = create<SubscriptionState>()(
       fetchSubscription: async () => {
         set({ isLoading: true, error: null });
         try {
-          // In a real app, you'd validate the receipt with your backend here
           await get().validateReceipt();
         } catch (error: any) {
           set({ error: error.message });
@@ -117,7 +103,6 @@ export const useSubscriptionStore = create<SubscriptionState>()(
       fetchUsage: async () => {
         set({ isLoading: true, error: null });
         try {
-          // In a real app, you'd fetch this from your backend
           set({
             usage: {
               projects: 1,
@@ -170,13 +155,17 @@ export const useSubscriptionStore = create<SubscriptionState>()(
         
         set({ isLoading: true, error: null });
         try {
-          const { responseCode } = await InAppPurchases.purchaseItemAsync(productId);
+          const result = await InAppPurchases.purchaseItemAsync(productId);
           
-          if (responseCode === InAppPurchases.IAPResponseCode.USER_CANCELED) {
+          if (!result) {
+            throw new Error('Purchase failed - no response');
+          }
+          
+          if (result.responseCode === InAppPurchases.IAPResponseCode.USER_CANCELED) {
             throw new Error('Purchase cancelled');
           }
           
-          if (responseCode !== InAppPurchases.IAPResponseCode.OK) {
+          if (result.responseCode !== InAppPurchases.IAPResponseCode.OK) {
             throw new Error('Purchase failed');
           }
         } catch (error: any) {
@@ -194,27 +183,24 @@ export const useSubscriptionStore = create<SubscriptionState>()(
         
         set({ isLoading: true, error: null });
         try {
-          const { responseCode, results } = await InAppPurchases.getPurchaseHistoryAsync();
+          const response = await InAppPurchases.getPurchaseHistoryAsync();
           
-          if (responseCode === InAppPurchases.IAPResponseCode.OK) {
-            // Process restored purchases
-            const latestPurchase = results[results.length - 1];
-            if (latestPurchase) {
-              const plan = SUBSCRIPTION_PLANS.find(p => p.productId === latestPurchase.productId);
-              if (plan) {
-                set({
-                  subscription: {
-                    id: latestPurchase.orderId,
-                    userId: 'current-user', // Replace with actual user ID
-                    planId: plan.id,
-                    tier: plan.tier,
-                    status: 'active',
-                    currentPeriodStart: new Date().toISOString(),
-                    currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-                    cancelAtPeriodEnd: false
-                  }
-                });
-              }
+          if (response?.responseCode === InAppPurchases.IAPResponseCode.OK && response.results && response.results.length > 0) {
+            const latestPurchase = response.results[response.results.length - 1];
+            const plan = SUBSCRIPTION_PLANS.find(p => p.productId === latestPurchase.productId);
+            if (plan) {
+              set({
+                subscription: {
+                  id: latestPurchase.orderId,
+                  userId: 'current-user',
+                  planId: plan.id,
+                  tier: plan.tier,
+                  status: 'active',
+                  currentPeriodStart: new Date().toISOString(),
+                  currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+                  cancelAtPeriodEnd: false
+                }
+              });
             }
           }
         } catch (error: any) {
@@ -230,8 +216,6 @@ export const useSubscriptionStore = create<SubscriptionState>()(
         
         set({ isLoading: true, error: null });
         try {
-          // In a real app, you'd validate the receipt with your backend here
-          // For now, we'll just check if we have an active subscription in state
           const { subscription } = get();
           if (subscription) {
             const currentPeriodEnd = new Date(subscription.currentPeriodEnd);
