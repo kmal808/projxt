@@ -3,22 +3,20 @@ import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
-import { Platform, Text, View, useColorScheme, Appearance } from "react-native";
+import { Platform, Text, View } from "react-native";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { trpc, trpcClient } from "@/lib/trpc";
 import { useThemeStore } from "@/store/theme-store";
+import { useSubscriptionStore } from "@/store/subscription-store";
 
 import { ErrorBoundary } from "./error-boundary";
 
 export const unstable_settings = {
-  // Ensure that reloading on `/modal` keeps a back button present.
   initialRouteName: "index",
 };
 
-// Create a client for React Query
 const queryClient = new QueryClient();
 
-// Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync().catch(err => {
   console.warn("Error preventing splash screen auto hide:", err);
 });
@@ -28,16 +26,17 @@ export default function RootLayout() {
     ...FontAwesome.font,
   });
   
-  // Initialize theme listener
-  const systemColorScheme = useColorScheme();
-  const { mode, setMode, isDarkMode } = useThemeStore();
+  const { mode, isDarkMode } = useThemeStore();
+  const { connect, disconnect } = useSubscriptionStore();
   
-  // Update theme based on system changes if in system mode
   useEffect(() => {
-    if (mode === 'system' && systemColorScheme) {
-      useThemeStore.setState({ isDarkMode: systemColorScheme === 'dark' });
+    if (Platform.OS !== 'web') {
+      connect();
+      return () => {
+        disconnect();
+      };
     }
-  }, [systemColorScheme, mode]);
+  }, []);
 
   useEffect(() => {
     if (error) {
@@ -88,6 +87,7 @@ function RootLayoutNav() {
       <Stack.Screen name="inventory" options={{ headerShown: true, title: "Inventory Management" }} />
       <Stack.Screen name="configurator" options={{ headerShown: true, title: "Product Configurator" }} />
       <Stack.Screen name="privacy-security" options={{ headerShown: false, title: "Privacy & Security" }} />
+      <Stack.Screen name="subscription" options={{ headerShown: true, title: "Subscription" }} />
     </Stack>
   );
 }

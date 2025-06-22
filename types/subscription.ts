@@ -10,6 +10,7 @@ export interface SubscriptionLimits {
 
 export interface SubscriptionPlan {
   id: string;
+  productId: string | null;
   name: string;
   tier: SubscriptionTier;
   price: number;

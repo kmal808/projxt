@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Platform } from 'react-native';
 import { Stack } from 'expo-router';
 import { Check, X } from 'lucide-react-native';
 import { useSubscriptionStore } from '@/store/subscription-store';
@@ -8,21 +8,45 @@ import Button from '@/components/ui/Button';
 import Colors from '@/constants/colors';
 
 export default function SubscriptionScreen() {
-  const { subscription, upgradePlan } = useSubscriptionStore();
+  const { 
+    subscription, 
+    purchaseSubscription, 
+    restorePurchases,
+    isLoading,
+    connect,
+    disconnect
+  } = useSubscriptionStore();
+  
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('monthly');
-  const [isLoading, setIsLoading] = useState(false);
 
-  const handleUpgrade = async (planId: string) => {
-    if (isLoading) return;
+  useEffect(() => {
+    if (Platform.OS !== 'web') {
+      connect();
+      return () => {
+        disconnect();
+      };
+    }
+  }, []);
+
+  const handleUpgrade = async (plan: typeof SUBSCRIPTION_PLANS[0]) => {
+    if (isLoading || !plan.productId) return;
 
     try {
-      setIsLoading(true);
-      await upgradePlan(planId);
+      await purchaseSubscription(plan.productId);
       Alert.alert('Success', 'Your subscription has been updated');
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to upgrade subscription');
-    } finally {
-      setIsLoading(false);
+      if (error.message !== 'Purchase cancelled') {
+        Alert.alert('Error', error.message || 'Failed to upgrade subscription');
+      }
+    }
+  };
+
+  const handleRestore = async () => {
+    try {
+      await restorePurchases();
+      Alert.alert('Success', 'Your purchases have been restored');
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Failed to restore purchases');
     }
   };
 
@@ -38,6 +62,25 @@ export default function SubscriptionScreen() {
       </Text>
     </View>
   );
+
+  if (Platform.OS === 'web') {
+    return (
+      <View style={styles.container}>
+        <Stack.Screen options={{ 
+          title: 'Subscription Plans',
+          headerBackTitle: 'Back',
+        }} />
+        <View style={styles.webMessage}>
+          <Text style={styles.webMessageText}>
+            Subscription management is only available in the mobile app.
+          </Text>
+          <Text style={styles.webMessageSubtext}>
+            Please download our app from the App Store to manage your subscription.
+          </Text>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -85,9 +128,12 @@ export default function SubscriptionScreen() {
             : plan.price;
           
           const isCurrentPlan = subscription?.tier === plan.tier;
+          const planId = billingPeriod === 'yearly' 
+            ? plan.id.replace('monthly', 'yearly')
+            : plan.id;
 
           return (
-            <View key={plan.id} style={[
+            <View key={planId} style={[
               styles.planCard,
               isCurrentPlan && styles.currentPlanCard
             ]}>
@@ -107,7 +153,7 @@ export default function SubscriptionScreen() {
 
               <Button
                 title={isCurrentPlan ? 'Current Plan' : 'Upgrade'}
-                onPress={() => handleUpgrade(plan.id)}
+                onPress={() => handleUpgrade(plan)}
                 disabled={isCurrentPlan || isLoading}
                 loading={isLoading}
                 variant={isCurrentPlan ? 'outline' : 'primary'}
@@ -117,6 +163,15 @@ export default function SubscriptionScreen() {
           );
         })}
       </ScrollView>
+
+      <View style={styles.footer}>
+        <Button
+          title="Restore Purchases"
+          onPress={handleRestore}
+          variant="outline"
+          disabled={isLoading}
+        />
+      </View>
     </View>
   );
 }
@@ -125,6 +180,24 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.background,
+  },
+  webMessage: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  webMessageText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: Colors.text,
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  webMessageSubtext: {
+    fontSize: 14,
+    color: Colors.textLight,
+    textAlign: 'center',
   },
   billingToggle: {
     flexDirection: 'row',
@@ -203,5 +276,10 @@ const styles = StyleSheet.create({
   },
   upgradeButton: {
     marginTop: 8,
+  },
+  footer: {
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
   },
 });

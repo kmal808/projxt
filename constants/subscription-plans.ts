@@ -1,8 +1,19 @@
 import { SubscriptionPlan } from '@/types/subscription';
 
+// Apple product IDs must match your App Store Connect configuration
+export const PRODUCT_IDS = [
+  'com.yourapp.subscription.basic.monthly',
+  'com.yourapp.subscription.basic.yearly',
+  'com.yourapp.subscription.professional.monthly',
+  'com.yourapp.subscription.professional.yearly',
+  'com.yourapp.subscription.enterprise.monthly',
+  'com.yourapp.subscription.enterprise.yearly'
+];
+
 export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
   {
     id: 'free',
+    productId: null,
     name: 'Free',
     tier: 'free',
     price: 0,
@@ -24,7 +35,8 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
     ],
   },
   {
-    id: 'basic',
+    id: 'basic-monthly',
+    productId: 'com.yourapp.subscription.basic.monthly',
     name: 'Basic',
     tier: 'basic',
     price: 29,
@@ -48,7 +60,8 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
     ],
   },
   {
-    id: 'professional',
+    id: 'professional-monthly',
+    productId: 'com.yourapp.subscription.professional.monthly',
     name: 'Professional',
     tier: 'professional',
     price: 79,
@@ -72,7 +85,8 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
     ],
   },
   {
-    id: 'enterprise',
+    id: 'enterprise-monthly',
+    productId: 'com.yourapp.subscription.enterprise.monthly',
     name: 'Enterprise',
     tier: 'enterprise',
     price: 199,
