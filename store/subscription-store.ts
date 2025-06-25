@@ -1,10 +1,9 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as InAppPurchases from 'expo-in-app-purchases';
 import { Platform } from 'react-native';
 import type { Subscription, SubscriptionUsage } from '@/types/subscription';
-import { SUBSCRIPTION_PLANS, PRODUCT_IDS } from '@/constants/subscription-plans';
+import { SUBSCRIPTION_PLANS } from '@/constants/subscription-plans';
 
 interface SubscriptionState {
   subscription: Subscription | null;
@@ -25,6 +24,7 @@ interface SubscriptionState {
   validateReceipt: () => Promise<void>;
 }
 
+// Mock implementation for development
 export const useSubscriptionStore = create<SubscriptionState>()(
   persist(
     (set, get) => ({
@@ -35,58 +35,11 @@ export const useSubscriptionStore = create<SubscriptionState>()(
       isConnected: false,
 
       connect: async () => {
-        if (Platform.OS === 'web') return;
-        
-        try {
-          await InAppPurchases.connectAsync();
-          
-          const response = await InAppPurchases.getProductsAsync(PRODUCT_IDS);
-          
-          if (response?.responseCode === InAppPurchases.IAPResponseCode.OK && response.results) {
-            console.log('Products loaded:', response.results);
-          }
-          
-          InAppPurchases.setPurchaseListener(({ responseCode, results }) => {
-            if (responseCode === InAppPurchases.IAPResponseCode.OK && results) {
-              results.forEach(async (purchase) => {
-                if (!purchase.acknowledged) {
-                  const plan = SUBSCRIPTION_PLANS.find(p => p.productId === purchase.productId);
-                  if (plan) {
-                    set({
-                      subscription: {
-                        id: purchase.orderId,
-                        userId: 'current-user',
-                        planId: plan.id,
-                        tier: plan.tier,
-                        status: 'active',
-                        currentPeriodStart: new Date().toISOString(),
-                        currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-                        cancelAtPeriodEnd: false
-                      }
-                    });
-                  }
-                  
-                  await InAppPurchases.finishTransactionAsync(purchase, false);
-                }
-              });
-            }
-          });
-          
-          set({ isConnected: true });
-        } catch (error: any) {
-          set({ error: error.message });
-        }
+        set({ isConnected: true });
       },
 
       disconnect: async () => {
-        if (Platform.OS === 'web') return;
-        
-        try {
-          await InAppPurchases.disconnectAsync();
-          set({ isConnected: false });
-        } catch (error: any) {
-          set({ error: error.message });
-        }
+        set({ isConnected: false });
       },
 
       fetchSubscription: async () => {
@@ -103,6 +56,7 @@ export const useSubscriptionStore = create<SubscriptionState>()(
       fetchUsage: async () => {
         set({ isLoading: true, error: null });
         try {
+          // Mock usage data
           set({
             usage: {
               projects: 1,
@@ -155,19 +109,27 @@ export const useSubscriptionStore = create<SubscriptionState>()(
         
         set({ isLoading: true, error: null });
         try {
-          const result = await InAppPurchases.purchaseItemAsync(productId);
-          
-          if (!result) {
-            throw new Error('Purchase failed - no response');
+          // Mock purchase flow
+          const plan = SUBSCRIPTION_PLANS.find(p => p.productId === productId);
+          if (!plan) {
+            throw new Error('Invalid product ID');
           }
+
+          // Simulate network delay
+          await new Promise(resolve => setTimeout(resolve, 1000));
           
-          if (result.responseCode === InAppPurchases.IAPResponseCode.USER_CANCELED) {
-            throw new Error('Purchase cancelled');
-          }
-          
-          if (result.responseCode !== InAppPurchases.IAPResponseCode.OK) {
-            throw new Error('Purchase failed');
-          }
+          set({
+            subscription: {
+              id: "mock-" + Date.now(),
+              userId: "current-user",
+              planId: plan.id,
+              tier: plan.tier,
+              status: "active",
+              currentPeriodStart: new Date().toISOString(),
+              currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+              cancelAtPeriodEnd: false
+            }
+          });
         } catch (error: any) {
           set({ error: error.message });
           throw error;
@@ -183,25 +145,10 @@ export const useSubscriptionStore = create<SubscriptionState>()(
         
         set({ isLoading: true, error: null });
         try {
-          const response = await InAppPurchases.getPurchaseHistoryAsync();
-          
-          if (response?.responseCode === InAppPurchases.IAPResponseCode.OK && response.results && response.results.length > 0) {
-            const latestPurchase = response.results[response.results.length - 1];
-            const plan = SUBSCRIPTION_PLANS.find(p => p.productId === latestPurchase.productId);
-            if (plan) {
-              set({
-                subscription: {
-                  id: latestPurchase.orderId,
-                  userId: 'current-user',
-                  planId: plan.id,
-                  tier: plan.tier,
-                  status: 'active',
-                  currentPeriodStart: new Date().toISOString(),
-                  currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-                  cancelAtPeriodEnd: false
-                }
-              });
-            }
+          // Mock restore flow
+          const { subscription } = get();
+          if (!subscription) {
+            throw new Error('No subscription to restore');
           }
         } catch (error: any) {
           set({ error: error.message });
