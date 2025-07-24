@@ -1,15 +1,18 @@
 import { FetchCreateContextFnOptions } from "@trpc/server/adapters/fetch";
 import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
+import { supabase } from "../../lib/supabase";
 
 // Define User type
 interface User {
   id: string;
-  name: string;
   email: string;
-  role: 'admin' | 'manager' | 'field' | 'office' | 'sales';
-  isEmailVerified: boolean;
-  createdAt: string;
+  full_name: string | null;
+  avatar_url: string | null;
+  role: 'admin' | 'project_manager' | 'crew_leader' | 'worker';
+  company_id: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 // Context creation function
@@ -26,35 +29,40 @@ export const createContext = async (opts: FetchCreateContextFnOptions) => {
   }
   
   // Extract the token from the auth header
-  const token = authHeader.split(' ')[1];
+  const token = authHeader.replace('Bearer ', '');
   
-  // In a real implementation, you would:
-  // 1. Verify the token (JWT, etc.)
-  // 2. Get the user from your database
-  
-  // For now, we'll simulate these steps
-  // This would be replaced with actual token verification and database queries
   let user: User | null = null;
   
   try {
-    // Simulate token verification
-    if (token) {
-      // In production, you would verify the token and get the user ID
-      // Then fetch the user from your database
-      
-      // Simulated user for development
-      user = {
-        id: "simulated-user-id",
-        name: "Simulated User",
-        email: "user@example.com",
-        role: "field",
-        isEmailVerified: true,
-        createdAt: new Date().toISOString()
+    // Verify the JWT token with Supabase
+    const { data: { user: authUser }, error: authError } = await supabase.auth.getUser(token);
+    
+    if (authError || !authUser) {
+      console.error('Auth error:', authError);
+      return {
+        req: opts.req,
+        user: null,
       };
     }
+    
+    // Get the user profile from our users table
+    const { data: userProfile, error: profileError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', authUser.id)
+      .single();
+    
+    if (profileError || !userProfile) {
+      console.error('Profile error:', profileError);
+      return {
+        req: opts.req,
+        user: null,
+      };
+    }
+    
+    user = userProfile;
   } catch (error) {
-    // Token verification failed
-    console.error("Token verification failed:", error);
+    console.error('Token verification failed:', error);
   }
   
   return {

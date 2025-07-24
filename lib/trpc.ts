@@ -2,7 +2,8 @@ import { createTRPCReact } from "@trpc/react-query";
 import { httpBatchLink, httpLink, loggerLink } from "@trpc/client";
 import type { AppRouter } from "@/backend/trpc/app-router";
 import superjson from "superjson";
-import { useAuthStore } from "@/store/auth-store";
+import { supabase } from "./supabase";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const trpc = createTRPCReact<AppRouter>();
 
@@ -16,10 +17,19 @@ const getBaseUrl = () => {
   );
 };
 
+// Get auth token from Supabase
+const getAuthToken = async () => {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    return session?.access_token || null;
+  } catch (error) {
+    console.error('Error getting auth token:', error);
+    return null;
+  }
+};
+
 // Create a client with authentication
 export const createTrpcClient = () => {
-  const token = useAuthStore.getState().token;
-  
   return trpc.createClient({
     links: [
       loggerLink({
@@ -30,8 +40,9 @@ export const createTrpcClient = () => {
       httpBatchLink({
         url: `${getBaseUrl()}/api/trpc`,
         transformer: superjson,
-        headers: () => {
+        headers: async () => {
           const headers: Record<string, string> = {};
+          const token = await getAuthToken();
           
           if (token) {
             headers.authorization = `Bearer ${token}`;
@@ -50,9 +61,9 @@ export const trpcClient = trpc.createClient({
     httpLink({
       url: `${getBaseUrl()}/api/trpc`,
       transformer: superjson,
-      headers: () => {
-        const token = useAuthStore.getState().token;
+      headers: async () => {
         const headers: Record<string, string> = {};
+        const token = await getAuthToken();
         
         if (token) {
           headers.authorization = `Bearer ${token}`;
