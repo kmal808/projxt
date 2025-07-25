@@ -149,6 +149,78 @@ export type Database = {
           updated_at?: string;
         };
       };
+      crew_members: {
+        Row: {
+          id: string;
+          crew_id: string;
+          user_id: string;
+          joined_at: string;
+        };
+        Insert: {
+          id?: string;
+          crew_id: string;
+          user_id: string;
+          joined_at?: string;
+        };
+        Update: {
+          id?: string;
+          crew_id?: string;
+          user_id?: string;
+          joined_at?: string;
+        };
+      };
+      project_crews: {
+        Row: {
+          id: string;
+          project_id: string;
+          crew_id: string;
+          assigned_at: string;
+        };
+        Insert: {
+          id?: string;
+          project_id: string;
+          crew_id: string;
+          assigned_at?: string;
+        };
+        Update: {
+          id?: string;
+          project_id?: string;
+          crew_id?: string;
+          assigned_at?: string;
+        };
+      };
+      user_invitations: {
+        Row: {
+          id: string;
+          email: string;
+          role: 'admin' | 'project_manager' | 'crew_leader' | 'worker';
+          company_id: string;
+          invited_by: string | null;
+          invited_at: string;
+          status: 'pending' | 'accepted' | 'expired';
+          expires_at: string;
+        };
+        Insert: {
+          id?: string;
+          email: string;
+          role: 'admin' | 'project_manager' | 'crew_leader' | 'worker';
+          company_id: string;
+          invited_by?: string | null;
+          invited_at?: string;
+          status?: 'pending' | 'accepted' | 'expired';
+          expires_at?: string;
+        };
+        Update: {
+          id?: string;
+          email?: string;
+          role?: 'admin' | 'project_manager' | 'crew_leader' | 'worker';
+          company_id?: string;
+          invited_by?: string | null;
+          invited_at?: string;
+          status?: 'pending' | 'accepted' | 'expired';
+          expires_at?: string;
+        };
+      };
     };
   };
 };
