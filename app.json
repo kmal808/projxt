@@ -23,7 +23,7 @@
       "infoPlist": {
         "This app uses the camera to capture photos for project documentation and inventory management"
       },
-    },
+    }
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
