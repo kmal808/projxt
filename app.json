@@ -21,7 +21,7 @@
       "bundleIdentifier": "app.kvrt.projxt",
       "usesIcloudStorage": true,
       "infoPlist": {
-        "This app uses the camera to capture photos for project documentation and inventory management"
+        "NSCameraUsageDescription": "This app uses the camera to capture photos for project documentation and inventory management."
       }
     },
     "android": {
