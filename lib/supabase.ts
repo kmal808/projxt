@@ -1,20 +1,16 @@
 import { createClient } from '@supabase/supabase-js';
-import Constants from 'expo-constants';
 
 function getSupabaseUrl(): string {
-  const url = Constants.expoConfig?.extra?.supabaseUrl || process.env.EXPO_PUBLIC_SUPABASE_URL;
+  const url = process.env.EXPO_PUBLIC_SUPABASE_URL;
   if (!url) {
-    console.error('EXPO_PUBLIC_SUPABASE_URL is not set');
-    console.error('Available env keys:', Object.keys(process.env).filter(k => k.includes('SUPABASE')));
     throw new Error('EXPO_PUBLIC_SUPABASE_URL environment variable is required');
   }
   return url;
 }
 
 function getSupabaseAnonKey(): string {
-  const key = Constants.expoConfig?.extra?.supabaseAnonKey || process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+  const key = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
   if (!key) {
-    console.error('EXPO_PUBLIC_SUPABASE_ANON_KEY is not set');
     throw new Error('EXPO_PUBLIC_SUPABASE_ANON_KEY environment variable is required');
   }
   return key;
