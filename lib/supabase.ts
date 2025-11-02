@@ -1,17 +1,18 @@
 import { createClient } from '@supabase/supabase-js';
+import Constants from 'expo-constants';
 
 function getSupabaseUrl(): string {
-  const url = process.env.EXPO_PUBLIC_SUPABASE_URL;
-  if (!url) {
-    throw new Error('EXPO_PUBLIC_SUPABASE_URL environment variable is required');
+  const url = Constants.expoConfig?.extra?.EXPO_PUBLIC_SUPABASE_URL || process.env.EXPO_PUBLIC_SUPABASE_URL;
+  if (!url || url === 'your_supabase_url_here') {
+    throw new Error('EXPO_PUBLIC_SUPABASE_URL environment variable is required. Please add your Supabase URL to the .env file.');
   }
   return url;
 }
 
 function getSupabaseAnonKey(): string {
-  const key = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
-  if (!key) {
-    throw new Error('EXPO_PUBLIC_SUPABASE_ANON_KEY environment variable is required');
+  const key = Constants.expoConfig?.extra?.EXPO_PUBLIC_SUPABASE_ANON_KEY || process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+  if (!key || key === 'your_supabase_anon_key_here') {
+    throw new Error('EXPO_PUBLIC_SUPABASE_ANON_KEY environment variable is required. Please add your Supabase anon key to the .env file.');
   }
   return key;
 }
