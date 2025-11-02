@@ -1,19 +1,12 @@
 import { createClient } from '@supabase/supabase-js';
-import Constants from 'expo-constants';
 
 function getSupabaseUrl(): string {
-  const url = Constants.expoConfig?.extra?.EXPO_PUBLIC_SUPABASE_URL || process.env.EXPO_PUBLIC_SUPABASE_URL;
-  if (!url || url === 'your_supabase_url_here') {
-    throw new Error('EXPO_PUBLIC_SUPABASE_URL environment variable is required. Please add your Supabase URL to the .env file.');
-  }
+  const url = 'https://gnztbtpkobmiqwjkryhz.supabase.co';
   return url;
 }
 
 function getSupabaseAnonKey(): string {
-  const key = Constants.expoConfig?.extra?.EXPO_PUBLIC_SUPABASE_ANON_KEY || process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
-  if (!key || key === 'your_supabase_anon_key_here') {
-    throw new Error('EXPO_PUBLIC_SUPABASE_ANON_KEY environment variable is required. Please add your Supabase anon key to the .env file.');
-  }
+  const key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImduenRidHBrb2JtaXF3amtyeWh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM0NTYyNzgsImV4cCI6MjA2OTAzMjI3OH0.aIXLe_OXwNxAiQzlw0JniI5eUIYqIc9-McaznSevD3g';
   return key;
 }
 
