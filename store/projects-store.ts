@@ -2,147 +2,23 @@ import { create } from 'zustand';
 import { Project, Task, ProjectDocument } from '@/types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { persist, createJSONStorage } from 'zustand/middleware';
-
-// Mock data for initial projects
-const initialProjects: Project[] = [
-  {
-    id: 'project1',
-    name: 'Downtown Office Renovation',
-    number: 'PRJ-2023-001',
-    client: 'Acme Corporation',
-    location: '123 Main St, Downtown',
-    budget: 250000,
-    startDate: '2023-06-15',
-    endDate: '2023-12-30',
-    status: 'active',
-    crews: ['crew1'],
-    tasks: [
-      {
-        id: 'task1',
-        projectId: 'project1',
-        title: 'Demolition of existing walls',
-        description: 'Remove all non-load bearing walls on the 3rd floor',
-        assignedTo: 'John Smith',
-        dueDate: '2023-07-15',
-        status: 'completed',
-        priority: 'high',
-        createdAt: '2023-06-16',
-        updatedAt: '2023-07-10',
-      },
-      {
-        id: 'task2',
-        projectId: 'project1',
-        title: 'Electrical rewiring',
-        description: 'Install new electrical system according to plans',
-        assignedTo: 'Sarah Johnson',
-        dueDate: '2023-08-30',
-        status: 'in_progress',
-        priority: 'medium',
-        createdAt: '2023-06-20',
-        updatedAt: '2023-08-05',
-      },
-      {
-        id: 'task3',
-        projectId: 'project1',
-        title: 'Install new flooring',
-        description: 'Install hardwood flooring in all office spaces',
-        assignedTo: 'Mike Wilson',
-        dueDate: '2023-10-15',
-        status: 'todo',
-        priority: 'medium',
-        createdAt: '2023-06-25',
-        updatedAt: '2023-06-25',
-      },
-    ],
-    documents: [
-      {
-        id: 'doc1',
-        name: 'Floor Plans',
-        type: 'PDF',
-        uri: 'https://example.com/floorplans.pdf',
-        size: 2500000,
-        uploadedBy: 'Project Manager',
-        uploadedAt: '2023-06-15',
-      },
-      {
-        id: 'doc2',
-        name: 'Electrical Diagrams',
-        type: 'DWG',
-        uri: 'https://example.com/electrical.dwg',
-        size: 1800000,
-        uploadedBy: 'Electrical Engineer',
-        uploadedAt: '2023-06-18',
-      },
-    ],
-  },
-  {
-    id: 'project2',
-    name: 'Riverside Apartment Complex',
-    number: 'PRJ-2023-002',
-    client: 'Riverside Development LLC',
-    location: '456 River Rd, Eastside',
-    budget: 5000000,
-    startDate: '2023-05-01',
-    endDate: '2024-08-30',
-    status: 'active',
-    crews: ['crew2'],
-    tasks: [
-      {
-        id: 'task4',
-        projectId: 'project2',
-        title: 'Foundation work',
-        description: 'Complete foundation for buildings A and B',
-        assignedTo: 'Construction Team A',
-        dueDate: '2023-07-30',
-        status: 'completed',
-        priority: 'high',
-        createdAt: '2023-05-05',
-        updatedAt: '2023-07-25',
-      },
-      {
-        id: 'task5',
-        projectId: 'project2',
-        title: 'Framing for Building A',
-        description: 'Complete wood framing for Building A',
-        assignedTo: 'Construction Team B',
-        dueDate: '2023-09-15',
-        status: 'in_progress',
-        priority: 'high',
-        createdAt: '2023-05-10',
-        updatedAt: '2023-08-01',
-      },
-    ],
-  },
-  {
-    id: 'project3',
-    name: 'City Park Renovation',
-    number: 'PRJ-2023-003',
-    client: 'City Parks Department',
-    location: 'Central Park, Northside',
-    budget: 750000,
-    startDate: '2023-08-01',
-    endDate: '2024-04-30',
-    status: 'pending',
-    crews: [],
-    tasks: [],
-  },
-];
+import { supabase } from '@/lib/supabase';
 
 interface ProjectsState {
   projects: Project[];
   isLoading: boolean;
   error: string | null;
   fetchProjects: () => Promise<void>;
-  addProject: (project: Project) => void;
-  updateProject: (id: string, updates: Partial<Project>) => void;
-  deleteProject: (id: string) => void;
-  addTaskToProject: (projectId: string, task: Task) => void;
-  updateTaskInProject: (projectId: string, taskId: string, updates: Partial<Task>) => void;
-  deleteTaskFromProject: (projectId: string, taskId: string) => void;
-  addDocumentToProject: (projectId: string, document: ProjectDocument) => void;
-  deleteDocumentFromProject: (projectId: string, documentId: string) => void;
-  assignCrewToProject: (projectId: string, crewId: string) => void;
-  removeCrewFromProject: (projectId: string, crewId: string) => void;
+  addProject: (project: Omit<Project, 'id'>) => Promise<void>;
+  updateProject: (id: string, updates: Partial<Project>) => Promise<void>;
+  deleteProject: (id: string) => Promise<void>;
+  addTaskToProject: (projectId: string, task: Omit<Task, 'id'>) => Promise<void>;
+  updateTaskInProject: (projectId: string, taskId: string, updates: Partial<Task>) => Promise<void>;
+  deleteTaskFromProject: (projectId: string, taskId: string) => Promise<void>;
+  addDocumentToProject: (projectId: string, document: Omit<ProjectDocument, 'id'>) => Promise<void>;
+  deleteDocumentFromProject: (projectId: string, documentId: string) => Promise<void>;
+  assignCrewToProject: (projectId: string, crewId: string) => Promise<void>;
+  removeCrewFromProject: (projectId: string, crewId: string) => Promise<void>;
 }
 
 export const useProjectsStore = create<ProjectsState>()(
@@ -150,153 +26,316 @@ export const useProjectsStore = create<ProjectsState>()(
     (set, get) => {
       console.log('Projects store initializing...');
       return {
-      projects: initialProjects,
+      projects: [],
       isLoading: false,
       error: null,
       
       fetchProjects: async () => {
         set({ isLoading: true, error: null });
         try {
-          // In a real app, this would be an API call
-          // For now, we'll just simulate a delay
-          await new Promise(resolve => setTimeout(resolve, 500));
-          
-          // If we already have projects, don't reset them
-          if (get().projects.length === 0) {
-            set({ projects: initialProjects });
-          }
-        } catch (error) {
-          set({ error: 'Failed to fetch projects' });
-        } finally {
-          set({ isLoading: false });
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) throw new Error('Not authenticated');
+
+          const { data: userProfile } = await supabase
+            .from('users')
+            .select('company_id')
+            .eq('id', user.id)
+            .single();
+
+          if (!userProfile?.company_id) throw new Error('Company not found');
+
+          const { data: projectsData, error } = await supabase
+            .from('projects')
+            .select('*')
+            .eq('company_id', userProfile.company_id);
+
+          if (error) throw error;
+
+          const projects: Project[] = (projectsData || []).map((p: any) => ({
+            id: p.id,
+            name: p.name,
+            number: p.id,
+            client: '',
+            location: p.description || '',
+            budget: 0,
+            startDate: p.start_date || '',
+            endDate: p.end_date || '',
+            status: p.status === 'planning' ? 'pending' : p.status === 'on_hold' ? 'pending' : p.status,
+            crews: [],
+            tasks: [],
+            documents: [],
+          }));
+
+          set({ projects, isLoading: false });
+        } catch (error: any) {
+          console.error('Fetch projects error:', error);
+          set({ error: error.message || 'Failed to fetch projects', isLoading: false });
         }
       },
       
-      addProject: (project: Project) => {
-        set(state => ({
-          projects: [...state.projects, project],
-        }));
+      addProject: async (project: Omit<Project, 'id'>) => {
+        set({ isLoading: true, error: null });
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) throw new Error('Not authenticated');
+
+          const { data: userProfile } = await supabase
+            .from('users')
+            .select('company_id')
+            .eq('id', user.id)
+            .single();
+
+          if (!userProfile?.company_id) throw new Error('Company not found');
+
+          const { data, error } = await supabase
+            .from('projects')
+            .insert({
+              name: project.name,
+              description: project.location,
+              status: project.status === 'pending' ? 'planning' : project.status,
+              start_date: project.startDate,
+              end_date: project.endDate,
+              company_id: userProfile.company_id,
+              created_by: user.id,
+            })
+            .select()
+            .single();
+
+          if (error) throw error;
+
+          const newProject: Project = {
+            ...project,
+            id: data.id as string,
+          };
+
+          set(state => ({
+            projects: [...state.projects, newProject],
+            isLoading: false,
+          }));
+        } catch (error: any) {
+          console.error('Add project error:', error);
+          set({ error: error.message || 'Failed to add project', isLoading: false });
+        }
       },
       
-      updateProject: (id: string, updates: Partial<Project>) => {
-        set(state => ({
-          projects: state.projects.map(project => 
-            project.id === id ? { ...project, ...updates } : project
-          ),
-        }));
+      updateProject: async (id: string, updates: Partial<Project>) => {
+        set({ isLoading: true, error: null });
+        try {
+          const { error } = await supabase
+            .from('projects')
+            .update({
+              name: updates.name,
+              description: updates.location,
+              status: updates.status === 'pending' ? 'planning' : updates.status,
+              start_date: updates.startDate,
+              end_date: updates.endDate,
+            })
+            .eq('id', id);
+
+          if (error) throw error;
+
+          set(state => ({
+            projects: state.projects.map(project => 
+              project.id === id ? { ...project, ...updates } : project
+            ),
+            isLoading: false,
+          }));
+        } catch (error: any) {
+          console.error('Update project error:', error);
+          set({ error: error.message || 'Failed to update project', isLoading: false });
+        }
       },
       
-      deleteProject: (id: string) => {
-        set(state => ({
-          projects: state.projects.filter(project => project.id !== id),
-        }));
+      deleteProject: async (id: string) => {
+        set({ isLoading: true, error: null });
+        try {
+          const { error } = await supabase
+            .from('projects')
+            .delete()
+            .eq('id', id);
+
+          if (error) throw error;
+
+          set(state => ({
+            projects: state.projects.filter(project => project.id !== id),
+            isLoading: false,
+          }));
+        } catch (error: any) {
+          console.error('Delete project error:', error);
+          set({ error: error.message || 'Failed to delete project', isLoading: false });
+        }
       },
       
-      addTaskToProject: (projectId: string, task: Task) => {
-        set(state => ({
-          projects: state.projects.map(project => {
-            if (project.id === projectId) {
-              const tasks = project.tasks || [];
-              return {
-                ...project,
-                tasks: [...tasks, task],
-              };
-            }
-            return project;
-          }),
-        }));
-      },
-      
-      updateTaskInProject: (projectId: string, taskId: string, updates: Partial<Task>) => {
-        set(state => ({
-          projects: state.projects.map(project => {
-            if (project.id === projectId && project.tasks) {
-              return {
-                ...project,
-                tasks: project.tasks.map(task => 
-                  task.id === taskId ? { ...task, ...updates } : task
-                ),
-              };
-            }
-            return project;
-          }),
-        }));
-      },
-      
-      deleteTaskFromProject: (projectId: string, taskId: string) => {
-        set(state => ({
-          projects: state.projects.map(project => {
-            if (project.id === projectId && project.tasks) {
-              return {
-                ...project,
-                tasks: project.tasks.filter(task => task.id !== taskId),
-              };
-            }
-            return project;
-          }),
-        }));
-      },
-      
-      addDocumentToProject: (projectId: string, document: ProjectDocument) => {
-        set(state => ({
-          projects: state.projects.map(project => {
-            if (project.id === projectId) {
-              const documents = project.documents || [];
-              return {
-                ...project,
-                documents: [...documents, document],
-              };
-            }
-            return project;
-          }),
-        }));
-      },
-      
-      deleteDocumentFromProject: (projectId: string, documentId: string) => {
-        set(state => ({
-          projects: state.projects.map(project => {
-            if (project.id === projectId && project.documents) {
-              return {
-                ...project,
-                documents: project.documents.filter(doc => doc.id !== documentId),
-              };
-            }
-            return project;
-          }),
-        }));
-      },
-      
-      assignCrewToProject: (projectId: string, crewId: string) => {
-        set(state => ({
-          projects: state.projects.map(project => {
-            if (project.id === projectId) {
-              // Check if crew is already assigned
-              if (project.crews.includes(crewId)) {
-                return project;
+      addTaskToProject: async (projectId: string, task: Omit<Task, 'id'>) => {
+        try {
+          const newTask: Task = {
+            ...task,
+            id: Date.now().toString(),
+          };
+
+          set(state => ({
+            projects: state.projects.map(project => {
+              if (project.id === projectId) {
+                const tasks = project.tasks || [];
+                return {
+                  ...project,
+                  tasks: [...tasks, newTask],
+                };
               }
-              
-              return {
-                ...project,
-                crews: [...project.crews, crewId],
-              };
-            }
-            return project;
-          }),
-        }));
+              return project;
+            }),
+          }));
+        } catch (error: any) {
+          console.error('Add task error:', error);
+          set({ error: error.message || 'Failed to add task' });
+        }
       },
       
-      removeCrewFromProject: (projectId: string, crewId: string) => {
-        set(state => ({
-          projects: state.projects.map(project => {
-            if (project.id === projectId) {
-              return {
-                ...project,
-                crews: project.crews.filter(id => id !== crewId),
-              };
-            }
-            return project;
-          }),
-        }));
+      updateTaskInProject: async (projectId: string, taskId: string, updates: Partial<Task>) => {
+        try {
+          set(state => ({
+            projects: state.projects.map(project => {
+              if (project.id === projectId && project.tasks) {
+                return {
+                  ...project,
+                  tasks: project.tasks.map(task => 
+                    task.id === taskId ? { ...task, ...updates } : task
+                  ),
+                };
+              }
+              return project;
+            }),
+          }));
+        } catch (error: any) {
+          console.error('Update task error:', error);
+          set({ error: error.message || 'Failed to update task' });
+        }
+      },
+      
+      deleteTaskFromProject: async (projectId: string, taskId: string) => {
+        try {
+          set(state => ({
+            projects: state.projects.map(project => {
+              if (project.id === projectId && project.tasks) {
+                return {
+                  ...project,
+                  tasks: project.tasks.filter(task => task.id !== taskId),
+                };
+              }
+              return project;
+            }),
+          }));
+        } catch (error: any) {
+          console.error('Delete task error:', error);
+          set({ error: error.message || 'Failed to delete task' });
+        }
+      },
+      
+      addDocumentToProject: async (projectId: string, document: Omit<ProjectDocument, 'id'>) => {
+        try {
+          const newDocument: ProjectDocument = {
+            ...document,
+            id: Date.now().toString(),
+          };
+
+          set(state => ({
+            projects: state.projects.map(project => {
+              if (project.id === projectId) {
+                const documents = project.documents || [];
+                return {
+                  ...project,
+                  documents: [...documents, newDocument],
+                };
+              }
+              return project;
+            }),
+          }));
+        } catch (error: any) {
+          console.error('Add document error:', error);
+          set({ error: error.message || 'Failed to add document' });
+        }
+      },
+      
+      deleteDocumentFromProject: async (projectId: string, documentId: string) => {
+        try {
+          set(state => ({
+            projects: state.projects.map(project => {
+              if (project.id === projectId && project.documents) {
+                return {
+                  ...project,
+                  documents: project.documents.filter(doc => doc.id !== documentId),
+                };
+              }
+              return project;
+            }),
+          }));
+        } catch (error: any) {
+          console.error('Delete document error:', error);
+          set({ error: error.message || 'Failed to delete document' });
+        }
+      },
+      
+      assignCrewToProject: async (projectId: string, crewId: string) => {
+        set({ isLoading: true, error: null });
+        try {
+          const { error } = await supabase
+            .from('project_crews')
+            .insert({
+              project_id: projectId,
+              crew_id: crewId,
+            });
+
+          if (error) throw error;
+
+          set(state => ({
+            projects: state.projects.map(project => {
+              if (project.id === projectId) {
+                if (project.crews.includes(crewId)) {
+                  return project;
+                }
+                
+                return {
+                  ...project,
+                  crews: [...project.crews, crewId],
+                };
+              }
+              return project;
+            }),
+            isLoading: false,
+          }));
+        } catch (error: any) {
+          console.error('Assign crew error:', error);
+          set({ error: error.message || 'Failed to assign crew', isLoading: false });
+        }
+      },
+      
+      removeCrewFromProject: async (projectId: string, crewId: string) => {
+        set({ isLoading: true, error: null });
+        try {
+          const { error } = await supabase
+            .from('project_crews')
+            .delete()
+            .eq('project_id', projectId)
+            .eq('crew_id', crewId);
+
+          if (error) throw error;
+
+          set(state => ({
+            projects: state.projects.map(project => {
+              if (project.id === projectId) {
+                return {
+                  ...project,
+                  crews: project.crews.filter(id => id !== crewId),
+                };
+              }
+              return project;
+            }),
+            isLoading: false,
+          }));
+        } catch (error: any) {
+          console.error('Remove crew error:', error);
+          set({ error: error.message || 'Failed to remove crew', isLoading: false });
+        }
       },
     };
     },

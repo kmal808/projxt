@@ -2,92 +2,87 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { InventoryItem } from '@/types';
-
-// Mock inventory data
-const initialInventoryItems: InventoryItem[] = [
-  {
-    id: '1',
-    jobName: 'Riverside Apartments',
-    jobNumber: 'PRJ-2023-001',
-    manufacturerOrderNumber: 'MO-12345',
-    itemType: 'windows',
-    quantity: 24,
-    notes: 'Double-pane, energy efficient',
-    dateAdded: '2023-09-15',
-    addedBy: 'user1',
-  },
-  {
-    id: '2',
-    jobName: 'Riverside Apartments',
-    jobNumber: 'PRJ-2023-001',
-    manufacturerOrderNumber: 'MO-12346',
-    itemType: 'siding',
-    quantity: 150,
-    notes: 'Vinyl, beige color',
-    dateAdded: '2023-09-15',
-    addedBy: 'user1',
-  },
-  {
-    id: '3',
-    jobName: 'Highland Office Complex',
-    jobNumber: 'PRJ-2023-002',
-    manufacturerOrderNumber: 'MO-23456',
-    itemType: 'entry_doors',
-    quantity: 12,
-    notes: 'Commercial grade, fire-rated',
-    dateAdded: '2023-10-02',
-    addedBy: 'user2',
-  },
-  {
-    id: '4',
-    jobName: 'Oakwood Residential',
-    jobNumber: 'PRJ-2023-003',
-    manufacturerOrderNumber: 'MO-34567',
-    itemType: 'windows',
-    quantity: 36,
-    notes: 'Casement style, white frame',
-    dateAdded: '2023-10-10',
-    addedBy: 'user1',
-  },
-];
+import { supabase } from '@/lib/supabase';
 
 interface InventoryState {
   items: InventoryItem[];
-  addItem: (item: Omit<InventoryItem, 'id' | 'dateAdded'>) => void;
-  updateItem: (id: string, item: Partial<InventoryItem>) => void;
-  deleteItem: (id: string) => void;
+  isLoading: boolean;
+  error: string | null;
+  fetchItems: () => Promise<void>;
+  addItem: (item: Omit<InventoryItem, 'id' | 'lastUpdated'>) => Promise<void>;
+  updateItem: (id: string, item: Partial<InventoryItem>) => Promise<void>;
+  deleteItem: (id: string) => Promise<void>;
   getItemById: (id: string) => InventoryItem | undefined;
 }
 
 export const useInventoryStore = create<InventoryState>()(
   persist(
     (set, get) => ({
-      items: initialInventoryItems,
-      
-      addItem: (item) => {
-        const newItem: InventoryItem = {
-          ...item,
-          id: Date.now().toString(),
-          dateAdded: new Date().toISOString().split('T')[0],
-        };
-        
-        set((state) => ({
-          items: [...state.items, newItem],
-        }));
+      items: [],
+      isLoading: false,
+      error: null,
+
+      fetchItems: async () => {
+        set({ isLoading: true, error: null });
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) throw new Error('Not authenticated');
+
+          set({ items: [], isLoading: false });
+        } catch (error: any) {
+          console.error('Fetch inventory error:', error);
+          set({ error: error.message || 'Failed to fetch inventory', isLoading: false });
+        }
       },
       
-      updateItem: (id, updatedItem) => {
-        set((state) => ({
-          items: state.items.map((item) => 
-            item.id === id ? { ...item, ...updatedItem } : item
-          ),
-        }));
+      addItem: async (item) => {
+        set({ isLoading: true, error: null });
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) throw new Error('Not authenticated');
+
+          const newItem: InventoryItem = {
+            ...item,
+            id: Date.now().toString(),
+            lastUpdated: new Date().toISOString().split('T')[0],
+          };
+
+          set((state) => ({
+            items: [...state.items, newItem],
+            isLoading: false,
+          }));
+        } catch (error: any) {
+          console.error('Add inventory error:', error);
+          set({ error: error.message || 'Failed to add inventory', isLoading: false });
+        }
       },
       
-      deleteItem: (id) => {
-        set((state) => ({
-          items: state.items.filter((item) => item.id !== id),
-        }));
+      updateItem: async (id, updatedItem) => {
+        set({ isLoading: true, error: null });
+        try {
+          set((state) => ({
+            items: state.items.map((item) => 
+              item.id === id ? { ...item, ...updatedItem } : item
+            ),
+            isLoading: false,
+          }));
+        } catch (error: any) {
+          console.error('Update inventory error:', error);
+          set({ error: error.message || 'Failed to update inventory', isLoading: false });
+        }
+      },
+      
+      deleteItem: async (id) => {
+        set({ isLoading: true, error: null });
+        try {
+          set((state) => ({
+            items: state.items.filter((item) => item.id !== id),
+            isLoading: false,
+          }));
+        } catch (error: any) {
+          console.error('Delete inventory error:', error);
+          set({ error: error.message || 'Failed to delete inventory', isLoading: false });
+        }
       },
       
       getItemById: (id) => {

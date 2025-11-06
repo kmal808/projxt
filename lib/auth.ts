@@ -56,7 +56,7 @@ class AuthService {
           .single();
 
         if (companyError) throw companyError;
-        companyId = company.id;
+        companyId = company.id as string;
       }
 
       // Create user profile
@@ -124,7 +124,7 @@ class AuthService {
 
       if (profileError || !profile) return null;
 
-      return profile;
+      return profile as unknown as AuthUser;
     } catch (error) {
       console.error('Get current user error:', error);
       return null;
@@ -159,15 +159,16 @@ class AuthService {
 
   async inviteUser(email: string, role: AuthUser['role'], companyId: string) {
     try {
-      // This would typically send an invitation email
-      // For now, we'll create a pending user record
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
       const { data, error } = await supabase
         .from('user_invitations')
         .insert({
           email,
           role,
           company_id: companyId,
-          invited_at: new Date().toISOString(),
+          invited_by: user.id,
           status: 'pending',
         })
         .select()

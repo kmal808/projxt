@@ -98,25 +98,6 @@ export const useAuthStore = create<AuthState>()(
         } catch (error: any) {
           console.error('Login error:', error);
           
-          // For development, allow bypassing auth if Supabase is not available
-          if (error.message?.includes('fetch') || error.message?.includes('network')) {
-            console.warn('Supabase not available, using mock authentication');
-            set({ 
-              user: {
-                id: 'mock-user',
-                name: 'Demo User',
-                email: email,
-                role: 'admin',
-                isEmailVerified: true,
-                createdAt: new Date().toISOString()
-              }, 
-              token: 'mock-token', 
-              isAuthenticated: true,
-              isLoading: false
-            });
-            return true;
-          }
-          
           set({ 
             error: error.message || 'An error occurred during login', 
             isLoading: false 
@@ -239,10 +220,14 @@ export const useAuthStore = create<AuthState>()(
         try {
           const currentUser = get().user;
           if (!currentUser) throw new Error('Not authenticated');
+          if (!currentUser.id) throw new Error('User ID not found');
           
-          // For now, return a mock invite link
-          // In a real implementation, this would use authService.inviteUser
-          const inviteLink = `https://yourapp.com/invite?email=${encodeURIComponent(email)}&role=${role}`;
+          const userProfile = await authService.getCurrentUser();
+          if (!userProfile?.company_id) throw new Error('Company ID not found');
+          
+          await authService.inviteUser(email, role, userProfile.company_id);
+          
+          const inviteLink = `your-app://invite?email=${encodeURIComponent(email)}&role=${role}`;
           
           set({ isLoading: false });
           return inviteLink;
