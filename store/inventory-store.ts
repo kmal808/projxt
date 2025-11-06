@@ -97,6 +97,16 @@ export const useInventoryStore = create<InventoryState>()(
     {
       name: 'inventory-storage',
       storage: createJSONStorage(() => AsyncStorage),
+      onRehydrateStorage: () => {
+        console.log('Inventory store: Starting rehydration');
+        return (state, error) => {
+          if (error) {
+            console.error('Inventory store: Rehydration failed', error);
+          } else {
+            console.log('Inventory store: Rehydration complete');
+          }
+        };
+      },
     }
   )
 );

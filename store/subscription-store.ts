@@ -27,7 +27,9 @@ interface SubscriptionState {
 // Mock implementation for development
 export const useSubscriptionStore = create<SubscriptionState>()(
   persist(
-    (set, get) => ({
+    (set, get) => {
+      console.log('Subscription store initializing...');
+      return {
       subscription: null,
       usage: null,
       isLoading: false,
@@ -176,10 +178,21 @@ export const useSubscriptionStore = create<SubscriptionState>()(
           set({ isLoading: false });
         }
       }
-    }),
+    };
+    },
     {
       name: 'subscription-storage',
       storage: createJSONStorage(() => AsyncStorage),
+      onRehydrateStorage: () => {
+        console.log('Subscription store: Starting rehydration');
+        return (state, error) => {
+          if (error) {
+            console.error('Subscription store: Rehydration failed', error);
+          } else {
+            console.log('Subscription store: Rehydration complete');
+          }
+        };
+      },
       partialize: (state) => ({
         subscription: state.subscription,
         usage: state.usage

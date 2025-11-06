@@ -21,6 +21,8 @@ SplashScreen.preventAutoHideAsync().catch(err => {
 });
 
 export default function RootLayout() {
+  console.log('RootLayout: Starting app initialization');
+  
   const [loaded, error] = useFonts({
     ...FontAwesome.font,
   });
@@ -29,9 +31,16 @@ export default function RootLayout() {
   const { connect, disconnect } = useSubscriptionStore();
   
   useEffect(() => {
+    console.log('RootLayout: useEffect - Platform:', Platform.OS);
     if (Platform.OS !== 'web') {
-      connect();
+      console.log('RootLayout: Connecting subscription store');
+      connect().then(() => {
+        console.log('RootLayout: Subscription store connected');
+      }).catch((err) => {
+        console.error('RootLayout: Failed to connect subscription store:', err);
+      });
       return () => {
+        console.log('RootLayout: Disconnecting subscription store');
         disconnect();
       };
     }
@@ -39,9 +48,11 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (error) {
-      console.error("Error loading fonts:", error);
+      console.error("RootLayout: Error loading fonts:", error);
+    } else {
+      console.log('RootLayout: Fonts loaded:', loaded);
     }
-  }, [error]);
+  }, [error, loaded]);
 
   useEffect(() => {
     if (loaded) {
@@ -52,12 +63,15 @@ export default function RootLayout() {
   }, [loaded]);
 
   if (!loaded) {
+    console.log('RootLayout: Still loading fonts...');
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <Text>Loading app resources...</Text>
       </View>
     );
   }
+  
+  console.log('RootLayout: Rendering main app');
 
   return (
     <ErrorBoundary>

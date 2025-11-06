@@ -14,16 +14,25 @@ let supabaseInstance: ReturnType<typeof createClient> | null = null;
 
 function getSupabaseInstance() {
   if (!supabaseInstance) {
-    const supabaseUrl = getSupabaseUrl();
-    const supabaseAnonKey = getSupabaseAnonKey();
-    
-    supabaseInstance = createClient(supabaseUrl, supabaseAnonKey, {
-      auth: {
-        autoRefreshToken: true,
-        persistSession: true,
-        detectSessionInUrl: false,
-      },
-    });
+    try {
+      const supabaseUrl = getSupabaseUrl();
+      const supabaseAnonKey = getSupabaseAnonKey();
+      
+      console.log('Initializing Supabase client...');
+      
+      supabaseInstance = createClient(supabaseUrl, supabaseAnonKey, {
+        auth: {
+          autoRefreshToken: true,
+          persistSession: true,
+          detectSessionInUrl: false,
+        },
+      });
+      
+      console.log('Supabase client initialized successfully');
+    } catch (error) {
+      console.error('Failed to initialize Supabase client:', error);
+      throw error;
+    }
   }
   
   return supabaseInstance;

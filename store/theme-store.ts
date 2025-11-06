@@ -13,7 +13,9 @@ interface ThemeState {
 
 export const useThemeStore = create<ThemeState>()(
   persist(
-    (set, get) => ({
+    (set, get) => {
+      console.log('Theme store initializing...');
+      return {
       mode: 'system' as ThemeMode,
       isDarkMode: Appearance.getColorScheme() === 'dark',
       
@@ -26,18 +28,35 @@ export const useThemeStore = create<ThemeState>()(
           set({ isDarkMode: mode === 'dark' });
         }
       },
-    }),
+    };
+    },
     {
       name: 'theme-storage',
       storage: createJSONStorage(() => AsyncStorage),
+      onRehydrateStorage: () => {
+        console.log('Theme store: Starting rehydration');
+        return (state, error) => {
+          if (error) {
+            console.error('Theme store: Rehydration failed', error);
+          } else {
+            console.log('Theme store: Rehydration complete');
+          }
+        };
+      },
     }
   )
 );
 
 // Listen for system theme changes
-Appearance.addChangeListener(({ colorScheme }) => {
-  const { mode, setMode } = useThemeStore.getState();
-  if (mode === 'system') {
-    useThemeStore.setState({ isDarkMode: colorScheme === 'dark' });
-  }
-});
+try {
+  console.log('Theme store: Setting up appearance listener');
+  Appearance.addChangeListener(({ colorScheme }) => {
+    const { mode } = useThemeStore.getState();
+    if (mode === 'system') {
+      useThemeStore.setState({ isDarkMode: colorScheme === 'dark' });
+    }
+  });
+  console.log('Theme store: Appearance listener set up successfully');
+} catch (error) {
+  console.error('Theme store: Failed to set up appearance listener:', error);
+}

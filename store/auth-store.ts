@@ -51,7 +51,9 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set, get) => ({
+    (set, get) => {
+      console.log('Auth store initializing...');
+      return {
       user: null,
       token: null,
       isAuthenticated: false,
@@ -252,10 +254,21 @@ export const useAuthStore = create<AuthState>()(
           throw error;
         }
       },
-    }),
+    };
+    },
     {
       name: 'auth-storage',
       storage: createJSONStorage(() => AsyncStorage),
+      onRehydrateStorage: () => {
+        console.log('Auth store: Starting rehydration');
+        return (state, error) => {
+          if (error) {
+            console.error('Auth store: Rehydration failed', error);
+          } else {
+            console.log('Auth store: Rehydration complete');
+          }
+        };
+      },
       partialize: (state) => ({
         // Only persist the token
         token: state.token,

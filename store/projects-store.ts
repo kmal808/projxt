@@ -147,7 +147,9 @@ interface ProjectsState {
 
 export const useProjectsStore = create<ProjectsState>()(
   persist(
-    (set, get) => ({
+    (set, get) => {
+      console.log('Projects store initializing...');
+      return {
       projects: initialProjects,
       isLoading: false,
       error: null,
@@ -296,10 +298,21 @@ export const useProjectsStore = create<ProjectsState>()(
           }),
         }));
       },
-    }),
+    };
+    },
     {
       name: 'projects-storage',
       storage: createJSONStorage(() => AsyncStorage),
+      onRehydrateStorage: () => {
+        console.log('Projects store: Starting rehydration');
+        return (state, error) => {
+          if (error) {
+            console.error('Projects store: Rehydration failed', error);
+          } else {
+            console.log('Projects store: Rehydration complete');
+          }
+        };
+      },
     }
   )
 );

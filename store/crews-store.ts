@@ -116,7 +116,9 @@ interface CrewsState {
 
 export const useCrewsStore = create<CrewsState>()(
   persist(
-    (set, get) => ({
+    (set, get) => {
+      console.log('Crews store initializing...');
+      return {
       crews: initialCrews,
       isLoading: false,
       error: null,
@@ -264,10 +266,21 @@ export const useCrewsStore = create<CrewsState>()(
           }),
         }));
       },
-    }),
+    };
+    },
     {
       name: 'crews-storage',
       storage: createJSONStorage(() => AsyncStorage),
+      onRehydrateStorage: () => {
+        console.log('Crews store: Starting rehydration');
+        return (state, error) => {
+          if (error) {
+            console.error('Crews store: Rehydration failed', error);
+          } else {
+            console.log('Crews store: Rehydration complete');
+          }
+        };
+      },
     }
   )
 );
