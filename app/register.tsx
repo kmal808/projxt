@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, Text, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -32,6 +32,14 @@ export default function RegisterScreen() {
   }>({});
   
   const register = useAuthStore((state) => state.register);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  
+  // Redirect to tabs if authenticated after registration
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.replace('/(tabs)');
+    }
+  }, [isAuthenticated, router]);
 
   const validateForm = () => {
     const newErrors: {
@@ -81,16 +89,21 @@ export default function RegisterScreen() {
         role: inviteRole as any || undefined,
       });
       
-      Alert.alert(
-        'Registration Successful',
-        'Your account has been created. You can now sign in.',
-        [
-          {
-            text: 'OK',
-            onPress: () => router.replace('/'),
-          },
-        ]
-      );
+      // If registration succeeds and user is now authenticated, redirect happens via useEffect
+      // If not authenticated (email confirmation required), show message
+      const authState = useAuthStore.getState();
+      if (!authState.isAuthenticated) {
+        Alert.alert(
+          'Registration Successful',
+          'Please check your email to verify your account.',
+          [
+            {
+              text: 'OK',
+              onPress: () => router.replace('/'),
+            },
+          ]
+        );
+      }
     } catch (error: any) {
       console.error('Registration error:', error);
       const errorMessage = error?.message || 'An error occurred during registration';

@@ -125,13 +125,40 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true, error: null });
         
         try {
-          await authService.signUp(data.email, data.password, data.name);
-          set({ isLoading: false });
+          const { user: authUser, session } = await authService.signUp(data.email, data.password, data.name);
+          
+          if (authUser && session) {
+            // Automatically log in the user after registration
+            const userProfile = await authService.getCurrentUser();
+            
+            if (userProfile) {
+              set({ 
+                user: {
+                  id: userProfile.id,
+                  name: userProfile.full_name || 'User',
+                  email: userProfile.email,
+                  role: userProfile.role,
+                  avatar: userProfile.avatar_url || undefined,
+                  isEmailVerified: true,
+                  createdAt: userProfile.created_at
+                }, 
+                token: session.access_token, 
+                isAuthenticated: true,
+                isLoading: false
+              });
+            } else {
+              set({ isLoading: false });
+            }
+          } else {
+            set({ isLoading: false });
+          }
         } catch (error: any) {
+          console.error('Registration error:', error);
           set({ 
             error: error.message || 'An error occurred during registration', 
             isLoading: false 
           });
+          throw error;
         }
       },
       
