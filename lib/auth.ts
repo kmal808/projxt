@@ -26,7 +26,9 @@ export interface Company {
 class AuthService {
   async signUp(email: string, password: string, fullName: string, companyName?: string) {
     try {
-      // Sign up with Supabase Auth
+      console.log('Starting signup process for:', email);
+      
+      // Sign up with Supabase Auth - disable email confirmation for development
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
@@ -34,15 +36,29 @@ class AuthService {
           data: {
             full_name: fullName,
           },
+          emailRedirectTo: undefined,
         },
       });
 
-      if (authError) throw authError;
-      if (!authData.user) throw new Error('User creation failed');
+      if (authError) {
+        console.error('Auth signup error:', authError);
+        throw authError;
+      }
+      
+      if (!authData.user) {
+        console.error('No user returned from signup');
+        throw new Error('User creation failed');
+      }
+
+      console.log('Auth user created:', authData.user.id);
+
+      // Wait a bit for the trigger to create the user profile
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
       // Create company if provided (for first admin user)
       let companyId: string | null = null;
       if (companyName) {
+        console.log('Creating company:', companyName);
         const { data: company, error: companyError } = await supabase
           .from('companies')
           .insert({
@@ -55,23 +71,31 @@ class AuthService {
           .select()
           .single();
 
-        if (companyError) throw companyError;
+        if (companyError) {
+          console.error('Company creation error:', companyError);
+          throw companyError;
+        }
         companyId = company.id as string;
+        console.log('Company created:', companyId);
       }
 
-      // Create user profile
+      // Update user profile with company and role
+      console.log('Updating user profile...');
       const { error: profileError } = await supabase
         .from('users')
-        .insert({
-          id: authData.user.id,
-          email: authData.user.email!,
+        .update({
           full_name: fullName,
-          role: companyName ? 'admin' : 'worker', // First user with company becomes admin
+          role: companyName ? 'admin' : 'worker',
           company_id: companyId,
-        });
+        })
+        .eq('id', authData.user.id);
 
-      if (profileError) throw profileError;
+      if (profileError) {
+        console.error('Profile update error:', profileError);
+        throw profileError;
+      }
 
+      console.log('Signup completed successfully');
       return { user: authData.user, session: authData.session };
     } catch (error) {
       console.error('Sign up error:', error);
@@ -81,12 +105,24 @@ class AuthService {
 
   async signIn(email: string, password: string) {
     try {
+      console.log('Attempting sign in for:', email);
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Sign in error:', error.message);
+        throw error;
+      }
+
+      if (!data.session) {
+        console.error('No session returned from sign in');
+        throw new Error('Login failed - no session created');
+      }
+
+      console.log('Sign in successful for user:', data.user?.id);
 
       // Store session token
       if (data.session?.access_token) {
@@ -114,7 +150,12 @@ class AuthService {
     try {
       const { data: { user }, error } = await supabase.auth.getUser();
       
-      if (error || !user) return null;
+      if (error || !user) {
+        console.log('No authenticated user found');
+        return null;
+      }
+
+      console.log('Fetching user profile for:', user.id);
 
       const { data: profile, error: profileError } = await supabase
         .from('users')
@@ -122,8 +163,17 @@ class AuthService {
         .eq('id', user.id)
         .single();
 
-      if (profileError || !profile) return null;
+      if (profileError) {
+        console.error('Profile fetch error:', profileError);
+        return null;
+      }
+      
+      if (!profile) {
+        console.error('No profile found for user:', user.id);
+        return null;
+      }
 
+      console.log('User profile fetched successfully');
       return profile as unknown as AuthUser;
     } catch (error) {
       console.error('Get current user error:', error);

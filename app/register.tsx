@@ -83,17 +83,18 @@ export default function RegisterScreen() {
       
       Alert.alert(
         'Registration Successful',
-        'Please check your email to verify your account.',
+        'Your account has been created. You can now sign in.',
         [
           {
             text: 'OK',
-            onPress: () => router.push('/'),
+            onPress: () => router.replace('/'),
           },
         ]
       );
     } catch (error: any) {
       console.error('Registration error:', error);
-      Alert.alert('Registration Failed', error.message || 'An error occurred during registration');
+      const errorMessage = error?.message || 'An error occurred during registration';
+      Alert.alert('Registration Failed', errorMessage);
     } finally {
       setIsLoading(false);
     }
