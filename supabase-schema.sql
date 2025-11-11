@@ -1,6 +1,3 @@
--- Enable Row Level Security
-ALTER DATABASE postgres SET "app.jwt_secret" TO 'your-jwt-secret';
-
 -- Create companies table
 CREATE TABLE companies (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
