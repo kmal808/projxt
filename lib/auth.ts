@@ -164,7 +164,8 @@ class AuthService {
         .single();
 
       if (profileError) {
-        console.error('Profile fetch error:', profileError);
+        console.error('Profile fetch error:', JSON.stringify(profileError, null, 2));
+        console.error('Profile error details:', profileError.message, profileError.code, profileError.details);
         return null;
       }
       
