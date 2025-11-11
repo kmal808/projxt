@@ -103,53 +103,123 @@ ALTER TABLE user_invitations ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies for companies
 CREATE POLICY "Users can view their own company" ON companies FOR SELECT USING (
-  id IN (SELECT company_id FROM users WHERE id = auth.uid())
+  id = (SELECT company_id FROM users WHERE id = auth.uid() LIMIT 1)
+);
+
+CREATE POLICY "Admins can insert companies" ON companies FOR INSERT WITH CHECK (
+  true
 );
 
 CREATE POLICY "Admins can update their company" ON companies FOR UPDATE USING (
-  id IN (SELECT company_id FROM users WHERE id = auth.uid() AND role = 'admin')
+  EXISTS (
+    SELECT 1 FROM users
+    WHERE users.id = auth.uid()
+    AND users.role = 'admin'
+    AND users.company_id = companies.id
+  )
 );
 
 -- RLS Policies for users
-CREATE POLICY "Users can view users in their company" ON users FOR SELECT USING (
-  company_id IN (SELECT company_id FROM users WHERE id = auth.uid())
+CREATE POLICY "Users can view their own profile" ON users FOR SELECT USING (
+  id = auth.uid()
 );
 
-CREATE POLICY "Users can update their own profile" ON users FOR UPDATE USING (id = auth.uid());
+CREATE POLICY "Users can view other users in same company" ON users FOR SELECT USING (
+  company_id = (SELECT company_id FROM users WHERE id = auth.uid() LIMIT 1)
+  AND company_id IS NOT NULL
+);
+
+CREATE POLICY "Users can insert their own profile" ON users FOR INSERT WITH CHECK (
+  id = auth.uid()
+);
+
+CREATE POLICY "Users can update their own profile" ON users FOR UPDATE USING (
+  id = auth.uid()
+);
 
 CREATE POLICY "Admins can update users in their company" ON users FOR UPDATE USING (
-  company_id IN (SELECT company_id FROM users WHERE id = auth.uid() AND role = 'admin')
+  EXISTS (
+    SELECT 1 FROM users admin_user
+    WHERE admin_user.id = auth.uid()
+    AND admin_user.role = 'admin'
+    AND admin_user.company_id = users.company_id
+    AND admin_user.company_id IS NOT NULL
+  )
 );
 
 -- RLS Policies for projects
 CREATE POLICY "Users can view projects in their company" ON projects FOR SELECT USING (
-  company_id IN (SELECT company_id FROM users WHERE id = auth.uid())
+  company_id = (SELECT company_id FROM users WHERE id = auth.uid() LIMIT 1)
 );
 
-CREATE POLICY "Project managers and admins can manage projects" ON projects FOR ALL USING (
-  company_id IN (
+CREATE POLICY "Project managers and admins can insert projects" ON projects FOR INSERT WITH CHECK (
+  company_id = (
     SELECT company_id FROM users 
     WHERE id = auth.uid() AND role IN ('admin', 'project_manager')
+    LIMIT 1
+  )
+);
+
+CREATE POLICY "Project managers and admins can update projects" ON projects FOR UPDATE USING (
+  company_id = (
+    SELECT company_id FROM users 
+    WHERE id = auth.uid() AND role IN ('admin', 'project_manager')
+    LIMIT 1
+  )
+);
+
+CREATE POLICY "Project managers and admins can delete projects" ON projects FOR DELETE USING (
+  company_id = (
+    SELECT company_id FROM users 
+    WHERE id = auth.uid() AND role IN ('admin', 'project_manager')
+    LIMIT 1
   )
 );
 
 -- RLS Policies for crews
 CREATE POLICY "Users can view crews in their company" ON crews FOR SELECT USING (
-  company_id IN (SELECT company_id FROM users WHERE id = auth.uid())
+  company_id = (SELECT company_id FROM users WHERE id = auth.uid() LIMIT 1)
 );
 
-CREATE POLICY "Crew leaders and admins can manage crews" ON crews FOR ALL USING (
-  company_id IN (
+CREATE POLICY "Crew leaders and admins can insert crews" ON crews FOR INSERT WITH CHECK (
+  company_id = (
     SELECT company_id FROM users 
     WHERE id = auth.uid() AND role IN ('admin', 'crew_leader', 'project_manager')
+    LIMIT 1
+  )
+);
+
+CREATE POLICY "Crew leaders and admins can update crews" ON crews FOR UPDATE USING (
+  company_id = (
+    SELECT company_id FROM users 
+    WHERE id = auth.uid() AND role IN ('admin', 'crew_leader', 'project_manager')
+    LIMIT 1
+  )
+);
+
+CREATE POLICY "Crew leaders and admins can delete crews" ON crews FOR DELETE USING (
+  company_id = (
+    SELECT company_id FROM users 
+    WHERE id = auth.uid() AND role IN ('admin', 'crew_leader', 'project_manager')
+    LIMIT 1
   )
 );
 
 -- RLS Policies for crew_members
 CREATE POLICY "Users can view crew members in their company" ON crew_members FOR SELECT USING (
   crew_id IN (
-    SELECT id FROM crews WHERE company_id IN (
-      SELECT company_id FROM users WHERE id = auth.uid()
+    SELECT id FROM crews WHERE company_id = (
+      SELECT company_id FROM users WHERE id = auth.uid() LIMIT 1
+    )
+  )
+);
+
+CREATE POLICY "Crew leaders can manage crew members" ON crew_members FOR ALL USING (
+  crew_id IN (
+    SELECT id FROM crews WHERE company_id = (
+      SELECT company_id FROM users 
+      WHERE id = auth.uid() AND role IN ('admin', 'crew_leader', 'project_manager')
+      LIMIT 1
     )
   )
 );
@@ -157,17 +227,52 @@ CREATE POLICY "Users can view crew members in their company" ON crew_members FOR
 -- RLS Policies for project_crews
 CREATE POLICY "Users can view project crews in their company" ON project_crews FOR SELECT USING (
   project_id IN (
-    SELECT id FROM projects WHERE company_id IN (
-      SELECT company_id FROM users WHERE id = auth.uid()
+    SELECT id FROM projects WHERE company_id = (
+      SELECT company_id FROM users WHERE id = auth.uid() LIMIT 1
+    )
+  )
+);
+
+CREATE POLICY "Project managers can manage project crews" ON project_crews FOR ALL USING (
+  project_id IN (
+    SELECT id FROM projects WHERE company_id = (
+      SELECT company_id FROM users 
+      WHERE id = auth.uid() AND role IN ('admin', 'project_manager')
+      LIMIT 1
     )
   )
 );
 
 -- RLS Policies for user_invitations
-CREATE POLICY "Admins can manage invitations for their company" ON user_invitations FOR ALL USING (
-  company_id IN (
+CREATE POLICY "Admins can view invitations for their company" ON user_invitations FOR SELECT USING (
+  company_id = (
     SELECT company_id FROM users 
     WHERE id = auth.uid() AND role = 'admin'
+    LIMIT 1
+  )
+);
+
+CREATE POLICY "Admins can insert invitations for their company" ON user_invitations FOR INSERT WITH CHECK (
+  company_id = (
+    SELECT company_id FROM users 
+    WHERE id = auth.uid() AND role = 'admin'
+    LIMIT 1
+  )
+);
+
+CREATE POLICY "Admins can update invitations for their company" ON user_invitations FOR UPDATE USING (
+  company_id = (
+    SELECT company_id FROM users 
+    WHERE id = auth.uid() AND role = 'admin'
+    LIMIT 1
+  )
+);
+
+CREATE POLICY "Admins can delete invitations for their company" ON user_invitations FOR DELETE USING (
+  company_id = (
+    SELECT company_id FROM users 
+    WHERE id = auth.uid() AND role = 'admin'
+    LIMIT 1
   )
 );
 
