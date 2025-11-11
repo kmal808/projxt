@@ -1,3 +1,15 @@
+-- Drop existing trigger if it exists
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+
+-- Drop existing tables if they exist (in correct order due to dependencies)
+DROP TABLE IF EXISTS user_invitations CASCADE;
+DROP TABLE IF EXISTS project_crews CASCADE;
+DROP TABLE IF EXISTS crew_members CASCADE;
+DROP TABLE IF EXISTS crews CASCADE;
+DROP TABLE IF EXISTS projects CASCADE;
+DROP TABLE IF EXISTS users CASCADE;
+DROP TABLE IF EXISTS companies CASCADE;
+
 -- Create companies table
 CREATE TABLE companies (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -86,6 +98,12 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
+-- Drop existing triggers if they exist
+DROP TRIGGER IF EXISTS update_companies_updated_at ON companies;
+DROP TRIGGER IF EXISTS update_users_updated_at ON users;
+DROP TRIGGER IF EXISTS update_projects_updated_at ON projects;
+DROP TRIGGER IF EXISTS update_crews_updated_at ON crews;
+
 -- Add updated_at triggers
 CREATE TRIGGER update_companies_updated_at BEFORE UPDATE ON companies FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
@@ -100,6 +118,38 @@ ALTER TABLE crews ENABLE ROW LEVEL SECURITY;
 ALTER TABLE crew_members ENABLE ROW LEVEL SECURITY;
 ALTER TABLE project_crews ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_invitations ENABLE ROW LEVEL SECURITY;
+
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Users can view their own company" ON companies;
+DROP POLICY IF EXISTS "Admins can insert companies" ON companies;
+DROP POLICY IF EXISTS "Admins can update their company" ON companies;
+
+DROP POLICY IF EXISTS "Users can view their own profile" ON users;
+DROP POLICY IF EXISTS "Users can view other users in same company" ON users;
+DROP POLICY IF EXISTS "Users can insert their own profile" ON users;
+DROP POLICY IF EXISTS "Users can update their own profile" ON users;
+DROP POLICY IF EXISTS "Admins can update users in their company" ON users;
+
+DROP POLICY IF EXISTS "Users can view projects in their company" ON projects;
+DROP POLICY IF EXISTS "Project managers and admins can insert projects" ON projects;
+DROP POLICY IF EXISTS "Project managers and admins can update projects" ON projects;
+DROP POLICY IF EXISTS "Project managers and admins can delete projects" ON projects;
+
+DROP POLICY IF EXISTS "Users can view crews in their company" ON crews;
+DROP POLICY IF EXISTS "Crew leaders and admins can insert crews" ON crews;
+DROP POLICY IF EXISTS "Crew leaders and admins can update crews" ON crews;
+DROP POLICY IF EXISTS "Crew leaders and admins can delete crews" ON crews;
+
+DROP POLICY IF EXISTS "Users can view crew members in their company" ON crew_members;
+DROP POLICY IF EXISTS "Crew leaders can manage crew members" ON crew_members;
+
+DROP POLICY IF EXISTS "Users can view project crews in their company" ON project_crews;
+DROP POLICY IF EXISTS "Project managers can manage project crews" ON project_crews;
+
+DROP POLICY IF EXISTS "Admins can view invitations for their company" ON user_invitations;
+DROP POLICY IF EXISTS "Admins can insert invitations for their company" ON user_invitations;
+DROP POLICY IF EXISTS "Admins can update invitations for their company" ON user_invitations;
+DROP POLICY IF EXISTS "Admins can delete invitations for their company" ON user_invitations;
 
 -- RLS Policies for companies
 CREATE POLICY "Users can view their own company" ON companies FOR SELECT USING (
