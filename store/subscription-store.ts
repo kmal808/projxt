@@ -76,30 +76,33 @@ export const useSubscriptionStore = create<SubscriptionState>()(
 
       canAddProject: () => {
         const { subscription, usage } = get();
-        if (!subscription || !usage) return false;
+        if (!usage) return true;
+        if (!subscription) return true;
 
         const plan = SUBSCRIPTION_PLANS.find(p => p.tier === subscription.tier);
-        if (!plan) return false;
+        if (!plan) return true;
 
         return usage.projects < plan.limits.maxProjects;
       },
 
       canAddCrew: () => {
         const { subscription, usage } = get();
-        if (!subscription || !usage) return false;
+        if (!usage) return true;
+        if (!subscription) return true;
 
         const plan = SUBSCRIPTION_PLANS.find(p => p.tier === subscription.tier);
-        if (!plan) return false;
+        if (!plan) return true;
 
         return usage.crews < plan.limits.maxCrews;
       },
 
       canInviteTeamMember: () => {
         const { subscription, usage } = get();
-        if (!subscription || !usage) return false;
+        if (!usage) return true;
+        if (!subscription) return true;
 
         const plan = SUBSCRIPTION_PLANS.find(p => p.tier === subscription.tier);
-        if (!plan) return false;
+        if (!plan) return true;
 
         return usage.teamMembers < plan.limits.maxTeamMembers;
       },
