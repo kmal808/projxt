@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, Platform } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Stack, useRouter } from 'expo-router';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, Platform, ScrollView } from 'react-native';
+import { Stack } from 'expo-router';
 import { FileItem } from '@/types';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
@@ -21,7 +20,7 @@ import {
   Filter
 } from 'lucide-react-native';
 import * as DocumentPicker from 'expo-document-picker';
-import * as FileSystem from 'expo-file-system';
+
 import * as Sharing from 'expo-sharing';
 import Input from '@/components/ui/Input';
 
@@ -90,7 +89,6 @@ const mockFiles: FileItem[] = [
 ];
 
 export default function FilesScreen() {
-  const router = useRouter();
   const [files, setFiles] = useState<FileItem[]>(mockFiles);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -325,7 +323,7 @@ export default function FilesScreen() {
   }
   
   return (
-    <SafeAreaView style={styles.container} edges={['bottom']}>
+    <View style={styles.container}>
       <Stack.Screen 
         options={{
           title: 'Files',
@@ -431,7 +429,7 @@ export default function FilesScreen() {
           }
         />
       )}
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -552,5 +550,3 @@ const styles = StyleSheet.create({
   },
 });
 
-// Add ScrollView import
-import { ScrollView } from 'react-native';
