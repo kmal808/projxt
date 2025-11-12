@@ -161,7 +161,7 @@ class AuthService {
         .from('users')
         .select('*')
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
 
       if (profileError) {
         console.error('Profile fetch error:', JSON.stringify(profileError, null, 2));
@@ -170,8 +170,26 @@ class AuthService {
       }
       
       if (!profile) {
-        console.error('No profile found for user:', user.id);
-        return null;
+        console.log('No profile found for user:', user.id, '- Creating profile now');
+        
+        const { data: newProfile, error: createError } = await supabase
+          .from('users')
+          .insert({
+            id: user.id,
+            email: user.email || '',
+            full_name: user.user_metadata?.full_name || null,
+            role: 'worker',
+          })
+          .select()
+          .single();
+
+        if (createError) {
+          console.error('Failed to create profile:', createError);
+          return null;
+        }
+
+        console.log('Profile created successfully');
+        return newProfile as unknown as AuthUser;
       }
 
       console.log('User profile fetched successfully');
