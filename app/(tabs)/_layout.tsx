@@ -25,16 +25,16 @@ export default function TabLayout() {
         tabBarStyle: {
           backgroundColor: theme.card,
           borderTopColor: theme.border,
-          height: Platform.OS === 'ios' ? 88 : 60,
-          paddingBottom: Platform.OS === 'ios' ? 28 : 8,
+          height: Platform.OS === 'ios' ? 88 : 68,
+          paddingBottom: Platform.OS === 'ios' ? 28 : 10,
           paddingTop: 8,
         },
         tabBarLabelStyle: {
-          fontSize: 10,
+          fontSize: 11,
           fontWeight: '500',
         },
         tabBarIconStyle: {
-          marginTop: 4,
+          marginBottom: 2,
         },
         headerShown: false,
       }}
@@ -42,8 +42,8 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: "Dashboard",
-          tabBarIcon: ({ color }) => <Home size={20} color={color} />,
+          title: "Home",
+          tabBarIcon: ({ color }) => <Home size={22} color={color} />,
         }}
       />
       
@@ -52,7 +52,7 @@ export default function TabLayout() {
           name="projects"
           options={{
             title: "Projects",
-            tabBarIcon: ({ color }) => <Clipboard size={20} color={color} />,
+            tabBarIcon: ({ color }) => <Clipboard size={22} color={color} />,
           }}
         />
       )}
@@ -62,7 +62,7 @@ export default function TabLayout() {
           name="crews"
           options={{
             title: "Crews",
-            tabBarIcon: ({ color }) => <Users size={20} color={color} />,
+            tabBarIcon: ({ color }) => <Users size={22} color={color} />,
           }}
         />
       )}
@@ -72,7 +72,7 @@ export default function TabLayout() {
           name="files"
           options={{
             title: "Files",
-            tabBarIcon: ({ color }) => <FolderOpen size={20} color={color} />,
+            tabBarIcon: ({ color }) => <FolderOpen size={22} color={color} />,
           }}
         />
       )}
@@ -82,7 +82,7 @@ export default function TabLayout() {
           name="inventory"
           options={{
             title: "Inventory",
-            tabBarIcon: ({ color }) => <Package size={20} color={color} />,
+            tabBarIcon: ({ color }) => <Package size={22} color={color} />,
           }}
         />
       )}
@@ -91,7 +91,7 @@ export default function TabLayout() {
         name="settings"
         options={{
           title: "Settings",
-          tabBarIcon: ({ color }) => <Settings size={20} color={color} />,
+          tabBarIcon: ({ color }) => <Settings size={22} color={color} />,
         }}
       />
     </Tabs>
