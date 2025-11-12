@@ -30,7 +30,11 @@ export default function TabLayout() {
           paddingTop: 8,
         },
         tabBarLabelStyle: {
-          fontSize: 11,
+          fontSize: 10,
+          fontWeight: '500',
+        },
+        tabBarIconStyle: {
+          marginTop: 4,
         },
         headerShown: false,
       }}
@@ -39,7 +43,7 @@ export default function TabLayout() {
         name="index"
         options={{
           title: "Dashboard",
-          tabBarIcon: ({ color, size }) => <Home size={size} color={color} />,
+          tabBarIcon: ({ color }) => <Home size={20} color={color} />,
         }}
       />
       
@@ -48,7 +52,7 @@ export default function TabLayout() {
           name="projects"
           options={{
             title: "Projects",
-            tabBarIcon: ({ color, size }) => <Clipboard size={size} color={color} />,
+            tabBarIcon: ({ color }) => <Clipboard size={20} color={color} />,
           }}
         />
       )}
@@ -58,7 +62,7 @@ export default function TabLayout() {
           name="crews"
           options={{
             title: "Crews",
-            tabBarIcon: ({ color, size }) => <Users size={size} color={color} />,
+            tabBarIcon: ({ color }) => <Users size={20} color={color} />,
           }}
         />
       )}
@@ -68,7 +72,7 @@ export default function TabLayout() {
           name="files"
           options={{
             title: "Files",
-            tabBarIcon: ({ color, size }) => <FolderOpen size={size} color={color} />,
+            tabBarIcon: ({ color }) => <FolderOpen size={20} color={color} />,
           }}
         />
       )}
@@ -78,7 +82,7 @@ export default function TabLayout() {
           name="inventory"
           options={{
             title: "Inventory",
-            tabBarIcon: ({ color, size }) => <Package size={size} color={color} />,
+            tabBarIcon: ({ color }) => <Package size={20} color={color} />,
           }}
         />
       )}
@@ -87,7 +91,7 @@ export default function TabLayout() {
         name="settings"
         options={{
           title: "Settings",
-          tabBarIcon: ({ color, size }) => <Settings size={size} color={color} />,
+          tabBarIcon: ({ color }) => <Settings size={20} color={color} />,
         }}
       />
     </Tabs>
