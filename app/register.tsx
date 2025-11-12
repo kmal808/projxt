@@ -23,6 +23,7 @@ export default function RegisterScreen() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [phone, setPhone] = useState('');
   const [title, setTitle] = useState('');
+  const [companyName, setCompanyName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<{
     name?: string;
@@ -87,6 +88,7 @@ export default function RegisterScreen() {
         title: title || undefined,
         inviteCode,
         role: inviteRole as any || undefined,
+        companyName: companyName || undefined,
       });
       
       // If registration succeeds and user is now authenticated, redirect happens via useEffect
@@ -200,6 +202,22 @@ export default function RegisterScreen() {
             leftIcon={<Briefcase size={18} color={Colors.textLight} />}
           />
           
+          {!inviteCode && (
+            <View>
+              <Text style={styles.sectionTitle}>Company Setup</Text>
+              <Text style={styles.sectionDescription}>
+                Create a new company to become an admin, or leave blank to join an existing company via invitation.
+              </Text>
+              <Input
+                label="Company Name (Optional)"
+                placeholder="Enter your company name"
+                value={companyName}
+                onChangeText={setCompanyName}
+                leftIcon={<Briefcase size={18} color={Colors.textLight} />}
+              />
+            </View>
+          )}
+          
           <Button
             title="Create Account"
             onPress={handleRegister}
@@ -262,5 +280,16 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: Colors.primary,
     marginLeft: 4,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.text,
+    marginBottom: 4,
+  },
+  sectionDescription: {
+    fontSize: 12,
+    color: Colors.textLight,
+    marginBottom: 8,
   },
 });

@@ -34,6 +34,7 @@ interface AuthState {
     title?: string;
     inviteCode?: string;
     role?: User['role'];
+    companyName?: string;
   }) => Promise<void>;
   verifyEmail: (token: string) => Promise<void>;
   requestPasswordReset: (email: string) => Promise<void>;
@@ -125,7 +126,7 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true, error: null });
         
         try {
-          const { user: authUser, session } = await authService.signUp(data.email, data.password, data.name);
+          const { user: authUser, session } = await authService.signUp(data.email, data.password, data.name, data.companyName);
           
           if (authUser && session) {
             // Automatically log in the user after registration
