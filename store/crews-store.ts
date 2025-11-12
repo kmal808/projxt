@@ -42,7 +42,11 @@ export const useCrewsStore = create<CrewsState>()(
             .eq('id', user.id)
             .single();
 
-          if (!userProfile?.company_id) throw new Error('Company not found');
+          if (!userProfile?.company_id) {
+            console.log('User has no company assigned yet');
+            set({ crews: [], isLoading: false });
+            return;
+          }
 
           const { data: crewsData, error } = await supabase
             .from('crews')
@@ -91,7 +95,7 @@ export const useCrewsStore = create<CrewsState>()(
             .eq('id', user.id)
             .single();
 
-          if (!userProfile?.company_id) throw new Error('Company not found');
+          if (!userProfile?.company_id) throw new Error('Please join or create a company first');
 
           const { data, error } = await supabase
             .from('crews')

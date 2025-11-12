@@ -42,7 +42,11 @@ export const useProjectsStore = create<ProjectsState>()(
             .eq('id', user.id)
             .single();
 
-          if (!userProfile?.company_id) throw new Error('Company not found');
+          if (!userProfile?.company_id) {
+            console.log('User has no company assigned yet');
+            set({ projects: [], isLoading: false });
+            return;
+          }
 
           const { data: projectsData, error } = await supabase
             .from('projects')
@@ -85,7 +89,7 @@ export const useProjectsStore = create<ProjectsState>()(
             .eq('id', user.id)
             .single();
 
-          if (!userProfile?.company_id) throw new Error('Company not found');
+          if (!userProfile?.company_id) throw new Error('Please join or create a company first');
 
           const { data, error } = await supabase
             .from('projects')
