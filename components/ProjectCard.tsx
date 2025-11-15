@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Project } from '@/types';
 import Card from './ui/Card';
 import StatusBadge from './ui/StatusBadge';
-import Colors from '@/constants/colors';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { Calendar, Users, MapPin } from 'lucide-react-native';
 
 interface ProjectCardProps {
@@ -12,6 +12,8 @@ interface ProjectCardProps {
 }
 
 export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onPress }) => {
+  const colors = useThemeColors();
+  
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -26,39 +28,39 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onPress }) =>
       <Card style={styles.card}>
         <View style={styles.header}>
           <View style={styles.titleContainer}>
-            <Text style={styles.title}>{project.name}</Text>
-            <Text style={styles.projectNumber}>{project.number}</Text>
+            <Text style={[styles.title, { color: colors.text }]}>{project.name}</Text>
+            <Text style={[styles.projectNumber, { color: colors.textLight }]}>{project.number}</Text>
           </View>
           <StatusBadge status={project.status} />
         </View>
         
         <View style={styles.infoContainer}>
           <View style={styles.infoRow}>
-            <Calendar size={16} color={Colors.textLight} />
-            <Text style={styles.infoText}>
+            <Calendar size={16} color={colors.textLight} />
+            <Text style={[styles.infoText, { color: colors.text }]}>
               {new Date(project.startDate).toLocaleDateString()} 
               {project.endDate ? ` - ${new Date(project.endDate).toLocaleDateString()}` : ' - Ongoing'}
             </Text>
           </View>
           
           <View style={styles.infoRow}>
-            <Users size={16} color={Colors.textLight} />
-            <Text style={styles.infoText}>
+            <Users size={16} color={colors.textLight} />
+            <Text style={[styles.infoText, { color: colors.text }]}>
               {project.crews.length} {project.crews.length === 1 ? 'Crew' : 'Crews'} Assigned
             </Text>
           </View>
           
           <View style={styles.infoRow}>
-            <MapPin size={16} color={Colors.textLight} />
-            <Text style={styles.infoText} numberOfLines={1}>
+            <MapPin size={16} color={colors.textLight} />
+            <Text style={[styles.infoText, { color: colors.text }]} numberOfLines={1}>
               {project.location}
             </Text>
           </View>
         </View>
         
-        <View style={styles.footer}>
-          <Text style={styles.client}>{project.client}</Text>
-          <Text style={styles.budget}>{formatCurrency(project.budget)}</Text>
+        <View style={[styles.footer, { borderTopColor: colors.border }]}>
+          <Text style={[styles.client, { color: colors.text }]}>{project.client}</Text>
+          <Text style={[styles.budget, { color: colors.primary }]}>{formatCurrency(project.budget)}</Text>
         </View>
       </Card>
     </TouchableOpacity>
@@ -82,12 +84,10 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: Colors.text,
     marginBottom: 4,
   },
   projectNumber: {
     fontSize: 12,
-    color: Colors.textLight,
   },
   infoContainer: {
     marginBottom: 12,
@@ -99,7 +99,6 @@ const styles = StyleSheet.create({
   },
   infoText: {
     fontSize: 13,
-    color: Colors.text,
     marginLeft: 8,
   },
   footer: {
@@ -108,17 +107,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: Colors.border,
   },
   client: {
     fontSize: 13,
     fontWeight: '500',
-    color: Colors.text,
   },
   budget: {
     fontSize: 14,
     fontWeight: 'bold',
-    color: Colors.primary,
   },
 });
 

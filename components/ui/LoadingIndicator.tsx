@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, ActivityIndicator, Text, StyleSheet } from 'react-native';
-import Colors from '@/constants/colors';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 interface LoadingIndicatorProps {
   size?: 'small' | 'large';
@@ -11,23 +11,26 @@ interface LoadingIndicatorProps {
 
 export const LoadingIndicator: React.FC<LoadingIndicatorProps> = ({
   size = 'large',
-  color = Colors.primary,
+  color,
   text,
   fullScreen = false,
 }) => {
+  const colors = useThemeColors();
+  const indicatorColor = color || colors.primary;
+  
   if (fullScreen) {
     return (
-      <View style={styles.fullScreen}>
-        <ActivityIndicator size={size} color={color} />
-        {text && <Text style={styles.text}>{text}</Text>}
+      <View style={[styles.fullScreen, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size={size} color={indicatorColor} />
+        {text && <Text style={[styles.text, { color: colors.textLight }]}>{text}</Text>}
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      <ActivityIndicator size={size} color={color} />
-      {text && <Text style={styles.text}>{text}</Text>}
+      <ActivityIndicator size={size} color={indicatorColor} />
+      {text && <Text style={[styles.text, { color: colors.textLight }]}>{text}</Text>}
     </View>
   );
 };
@@ -42,12 +45,10 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.background,
   },
   text: {
     marginTop: 10,
     fontSize: 14,
-    color: Colors.textLight,
   },
 });
 

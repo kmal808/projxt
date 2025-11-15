@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import Avatar from './ui/Avatar';
-import Colors from '@/constants/colors';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { Bell, Search } from 'lucide-react-native';
 import { useAuthStore } from '@/store/auth-store';
 
@@ -19,6 +19,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   onSearchPress,
   onNotificationPress,
 }) => {
+  const colors = useThemeColors();
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
 
@@ -38,27 +39,27 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
         </TouchableOpacity>
         
         <View style={styles.titleContainer}>
-          <Text style={styles.title}>{title}</Text>
-          {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
+          <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
+          {subtitle && <Text style={[styles.subtitle, { color: colors.textLight }]}>{subtitle}</Text>}
         </View>
       </View>
       
       <View style={styles.rightSection}>
         {onSearchPress && (
           <TouchableOpacity 
-            style={styles.iconButton} 
+            style={[styles.iconButton, { backgroundColor: colors.background }]} 
             onPress={onSearchPress}
           >
-            <Search size={20} color={Colors.text} />
+            <Search size={20} color={colors.text} />
           </TouchableOpacity>
         )}
         
         {onNotificationPress && (
           <TouchableOpacity 
-            style={styles.iconButton} 
+            style={[styles.iconButton, { backgroundColor: colors.background }]} 
             onPress={onNotificationPress}
           >
-            <Bell size={20} color={Colors.text} />
+            <Bell size={20} color={colors.text} />
           </TouchableOpacity>
         )}
       </View>
@@ -84,11 +85,9 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: Colors.text,
   },
   subtitle: {
     fontSize: 12,
-    color: Colors.textLight,
     marginTop: 2,
   },
   rightSection: {
@@ -99,7 +98,6 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: Colors.background,
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: 8,

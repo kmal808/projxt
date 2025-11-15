@@ -8,13 +8,14 @@ import ProjectCard from '@/components/ProjectCard';
 import CrewCard from '@/components/CrewCard';
 import LoadingIndicator from '@/components/ui/LoadingIndicator';
 import EmptyState from '@/components/ui/EmptyState';
-import Colors from '@/constants/colors';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { useAuthStore } from '@/store/auth-store';
 import { useProjectsStore } from '@/store/projects-store';
 import { useCrewsStore } from '@/store/crews-store';
 import { Building, Users, DollarSign, Clock, ChevronRight, Package } from 'lucide-react-native';
 
 export default function DashboardScreen() {
+  const colors = useThemeColors();
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
   const { projects, fetchProjects, isLoading: projectsLoading } = useProjectsStore();
@@ -77,7 +78,7 @@ export default function DashboardScreen() {
   const recentProjects = getRecentProjects();
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
       <DashboardHeader 
         title={`${getGreeting()}, ${user?.name?.split(' ')[0] || 'User'}`}
         subtitle={`${new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}`}
@@ -95,40 +96,40 @@ export default function DashboardScreen() {
           <StatCard
             title="Active Projects"
             value={activeProjects.length}
-            icon={<Building size={16} color={Colors.primary} />}
-            color={Colors.primary}
+            icon={<Building size={16} color={colors.primary} />}
+            color={colors.primary}
           />
           
           <StatCard
             title="Total Crews"
             value={crews.length}
-            icon={<Users size={16} color={Colors.success} />}
-            color={Colors.success}
+            icon={<Users size={16} color={colors.success} />}
+            color={colors.success}
           />
           
           <StatCard
             title="Budget"
-            value={`$${(projects.reduce((sum, project) => sum + project.budget, 0) / 1000000).toFixed(1)}M`}
-            icon={<DollarSign size={16} color={Colors.accent} />}
-            color={Colors.accent}
+            value={`${(projects.reduce((sum, project) => sum + project.budget, 0) / 1000000).toFixed(1)}M`}
+            icon={<DollarSign size={16} color={colors.accent} />}
+            color={colors.accent}
             trend={{ value: 12, isPositive: true }}
           />
           
           <StatCard
             title="Upcoming Deadlines"
             value="3"
-            icon={<Clock size={16} color={Colors.secondary} />}
-            color={Colors.secondary}
+            icon={<Clock size={16} color={colors.secondary} />}
+            color={colors.secondary}
           />
         </View>
         
         {/* Recent Projects */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Recent Projects</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Recent Projects</Text>
           {projects.length > 0 && (
             <TouchableOpacity onPress={handleViewAllProjects} style={styles.viewAllButton}>
-              <Text style={styles.viewAllText}>View All</Text>
-              <ChevronRight size={16} color={Colors.primary} />
+              <Text style={[styles.viewAllText, { color: colors.primary }]}>View All</Text>
+              <ChevronRight size={16} color={colors.primary} />
             </TouchableOpacity>
           )}
         </View>
@@ -149,7 +150,7 @@ export default function DashboardScreen() {
           <EmptyState
             title="No Projects Found"
             description="There are no projects to display at the moment."
-            icon={<Building size={40} color={Colors.textLight} />}
+            icon={<Building size={40} color={colors.textLight} />}
             actionLabel="Add Project"
             onAction={() => router.push('/(tabs)/projects')}
           />
@@ -159,11 +160,11 @@ export default function DashboardScreen() {
         {(user?.role === 'admin' || user?.role === 'manager') && (
           <>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Crews</Text>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Crews</Text>
               {crews.length > 0 && (
                 <TouchableOpacity onPress={handleViewAllCrews} style={styles.viewAllButton}>
-                  <Text style={styles.viewAllText}>View All</Text>
-                  <ChevronRight size={16} color={Colors.primary} />
+                  <Text style={[styles.viewAllText, { color: colors.primary }]}>View All</Text>
+                  <ChevronRight size={16} color={colors.primary} />
                 </TouchableOpacity>
               )}
             </View>
@@ -184,7 +185,7 @@ export default function DashboardScreen() {
               <EmptyState
                 title="No Crews Found"
                 description="There are no crews to display at the moment."
-                icon={<Users size={40} color={Colors.textLight} />}
+                icon={<Users size={40} color={colors.textLight} />}
                 actionLabel="Add Crew"
                 onAction={() => router.push('/(tabs)/crews')}
               />
@@ -194,31 +195,31 @@ export default function DashboardScreen() {
         
         {/* Quick Actions */}
         <View style={styles.quickActionsSection}>
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Quick Actions</Text>
           
           <View style={styles.quickActionsList}>
             <TouchableOpacity 
-              style={styles.quickActionButton}
+              style={[styles.quickActionButton, { backgroundColor: colors.card, borderColor: colors.border }]}
               onPress={() => router.push('/payroll')}
             >
-              <DollarSign size={24} color={Colors.primary} />
-              <Text style={styles.quickActionText}>Payroll</Text>
+              <DollarSign size={24} color={colors.primary} />
+              <Text style={[styles.quickActionText, { color: colors.text }]}>Payroll</Text>
             </TouchableOpacity>
             
             <TouchableOpacity 
-              style={styles.quickActionButton}
+              style={[styles.quickActionButton, { backgroundColor: colors.card, borderColor: colors.border }]}
               onPress={() => router.push('/inventory')}
             >
-              <Package size={24} color={Colors.primary} />
-              <Text style={styles.quickActionText}>Inventory</Text>
+              <Package size={24} color={colors.primary} />
+              <Text style={[styles.quickActionText, { color: colors.text }]}>Inventory</Text>
             </TouchableOpacity>
             
             <TouchableOpacity 
-              style={styles.quickActionButton}
+              style={[styles.quickActionButton, { backgroundColor: colors.card, borderColor: colors.border }]}
               onPress={() => router.push('/configurator')}
             >
-              <Building size={24} color={Colors.primary} />
-              <Text style={styles.quickActionText}>Configurator</Text>
+              <Building size={24} color={colors.primary} />
+              <Text style={[styles.quickActionText, { color: colors.text }]}>Configurator</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -230,7 +231,6 @@ export default function DashboardScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
   },
   scrollView: {
     flex: 1,
@@ -256,7 +256,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: Colors.text,
   },
   viewAllButton: {
     flexDirection: 'row',
@@ -264,7 +263,6 @@ const styles = StyleSheet.create({
   },
   viewAllText: {
     fontSize: 14,
-    color: Colors.primary,
     marginRight: 4,
   },
   projectsList: {
@@ -286,17 +284,14 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.card,
     borderRadius: 12,
     padding: 16,
     marginHorizontal: 4,
     borderWidth: 1,
-    borderColor: Colors.border,
   },
   quickActionText: {
     marginTop: 8,
     fontSize: 12,
-    color: Colors.text,
     fontWeight: '500',
   },
 });

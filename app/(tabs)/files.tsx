@@ -6,7 +6,7 @@ import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import EmptyState from '@/components/ui/EmptyState';
 import LoadingIndicator from '@/components/ui/LoadingIndicator';
-import Colors from '@/constants/colors';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { 
   File, 
   Image as ImageIcon, 
@@ -89,6 +89,7 @@ const mockFiles: FileItem[] = [
 ];
 
 export default function FilesScreen() {
+  const colors = useThemeColors();
   const [files, setFiles] = useState<FileItem[]>(mockFiles);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -240,19 +241,19 @@ export default function FilesScreen() {
       case 'jpeg':
       case 'png':
       case 'gif':
-        return <ImageIcon size={24} color={Colors.primary} />;
+        return <ImageIcon size={24} color={colors.primary} />;
       case 'pdf':
-        return <FileText size={24} color={Colors.danger} />;
+        return <FileText size={24} color={colors.danger} />;
       case 'doc':
       case 'docx':
-        return <FileText size={24} color={Colors.primary} />;
+        return <FileText size={24} color={colors.primary} />;
       case 'xls':
       case 'xlsx':
-        return <FileText size={24} color={Colors.success} />;
+        return <FileText size={24} color={colors.success} />;
       case 'dwg':
-        return <FileText size={24} color={Colors.warning} />;
+        return <FileText size={24} color={colors.warning} />;
       default:
-        return <File size={24} color={Colors.textLight} />;
+        return <File size={24} color={colors.textLight} />;
     }
   };
   
@@ -270,22 +271,22 @@ export default function FilesScreen() {
     return (
       <Card style={styles.fileCard}>
         <View style={styles.fileCardContent}>
-          <View style={styles.fileIconContainer}>
+          <View style={[styles.fileIconContainer, { backgroundColor: colors.background }]}>
             {getFileIcon(item.type)}
           </View>
           
           <View style={styles.fileInfo}>
-            <Text style={styles.fileName}>{item.name}</Text>
-            <Text style={styles.fileDetails}>
+            <Text style={[styles.fileName, { color: colors.text }]}>{item.name}</Text>
+            <Text style={[styles.fileDetails, { color: colors.textLight }]}>
               {formatFileSize(item.size)} • {new Date(item.updatedAt).toLocaleDateString()}
             </Text>
             <View style={styles.fileTags}>
-              <View style={styles.categoryTag}>
-                <Text style={styles.categoryTagText}>{item.category}</Text>
+              <View style={[styles.categoryTag, { backgroundColor: colors.primary + '20' }]}>
+                <Text style={[styles.categoryTagText, { color: colors.primary }]}>{item.category}</Text>
               </View>
               {item.tags?.map(tag => (
-                <View key={tag} style={styles.tag}>
-                  <Text style={styles.tagText}>{tag}</Text>
+                <View key={tag} style={[styles.tag, { backgroundColor: colors.background }]}>
+                  <Text style={[styles.tagText, { color: colors.textLight }]}>{tag}</Text>
                 </View>
               ))}
             </View>
@@ -293,24 +294,24 @@ export default function FilesScreen() {
           
           <View style={styles.fileActions}>
             <TouchableOpacity 
-              style={styles.fileAction}
+              style={[styles.fileAction, { backgroundColor: colors.background }]}
               onPress={() => handleDownloadFile(item)}
             >
-              <Download size={18} color={Colors.primary} />
+              <Download size={18} color={colors.primary} />
             </TouchableOpacity>
             
             <TouchableOpacity 
-              style={styles.fileAction}
+              style={[styles.fileAction, { backgroundColor: colors.background }]}
               onPress={() => handleShareFile(item)}
             >
-              <Share2 size={18} color={Colors.primary} />
+              <Share2 size={18} color={colors.primary} />
             </TouchableOpacity>
             
             <TouchableOpacity 
-              style={styles.fileAction}
+              style={[styles.fileAction, { backgroundColor: colors.background }]}
               onPress={() => handleDeleteFile(item.id)}
             >
-              <Trash2 size={18} color={Colors.danger} />
+              <Trash2 size={18} color={colors.danger} />
             </TouchableOpacity>
           </View>
         </View>
@@ -323,7 +324,7 @@ export default function FilesScreen() {
   }
   
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Stack.Screen 
         options={{
           title: 'Files',
@@ -332,7 +333,7 @@ export default function FilesScreen() {
               style={styles.headerButton}
               onPress={handleAddFile}
             >
-              <FilePlus size={24} color={Colors.primary} />
+              <FilePlus size={24} color={colors.primary} />
             </TouchableOpacity>
           ),
         }} 
@@ -343,7 +344,7 @@ export default function FilesScreen() {
           placeholder="Search files by name or tag"
           value={searchQuery}
           onChangeText={setSearchQuery}
-          leftIcon={<Search size={18} color={Colors.textLight} />}
+          leftIcon={<Search size={18} color={colors.textLight} />}
           style={styles.searchInput}
         />
       </View>
@@ -357,14 +358,16 @@ export default function FilesScreen() {
           <TouchableOpacity
             style={[
               styles.categoryButton,
-              selectedCategory === null && styles.selectedCategoryButton
+              { backgroundColor: colors.background, borderColor: colors.border },
+              selectedCategory === null && { backgroundColor: colors.primary + '10', borderColor: colors.primary }
             ]}
             onPress={() => setSelectedCategory(null)}
           >
             <Text
               style={[
                 styles.categoryButtonText,
-                selectedCategory === null && styles.selectedCategoryButtonText
+                { color: colors.textLight },
+                selectedCategory === null && { color: colors.primary, fontWeight: '500' as const }
               ]}
             >
               All
@@ -376,14 +379,16 @@ export default function FilesScreen() {
               key={category}
               style={[
                 styles.categoryButton,
-                selectedCategory === category && styles.selectedCategoryButton
+                { backgroundColor: colors.background, borderColor: colors.border },
+                selectedCategory === category && { backgroundColor: colors.primary + '10', borderColor: colors.primary }
               ]}
               onPress={() => setSelectedCategory(category === selectedCategory ? null : category)}
             >
               <Text
                 style={[
                   styles.categoryButtonText,
-                  selectedCategory === category && styles.selectedCategoryButtonText
+                  { color: colors.textLight },
+                  selectedCategory === category && { color: colors.primary, fontWeight: '500' as const }
                 ]}
               >
                 {category}
@@ -402,7 +407,7 @@ export default function FilesScreen() {
         />
       ) : (
         <EmptyState
-          icon={<FolderOpen size={48} color={Colors.textLight} />}
+          icon={<FolderOpen size={48} color={colors.textLight} />}
           title="No files found"
           message={
             searchQuery || selectedCategory
@@ -436,7 +441,6 @@ export default function FilesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
   },
   headerButton: {
     padding: 8,
@@ -459,21 +463,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 16,
-    backgroundColor: Colors.background,
     borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  selectedCategoryButton: {
-    backgroundColor: Colors.primary + '10',
-    borderColor: Colors.primary,
   },
   categoryButtonText: {
     fontSize: 14,
-    color: Colors.textLight,
-  },
-  selectedCategoryButtonText: {
-    color: Colors.primary,
-    fontWeight: '500',
   },
   filesList: {
     padding: 16,
@@ -490,7 +483,6 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 8,
-    backgroundColor: Colors.background,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -501,12 +493,10 @@ const styles = StyleSheet.create({
   fileName: {
     fontSize: 14,
     fontWeight: '500',
-    color: Colors.text,
     marginBottom: 4,
   },
   fileDetails: {
     fontSize: 12,
-    color: Colors.textLight,
     marginBottom: 4,
   },
   fileTags: {
@@ -518,22 +508,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 12,
-    backgroundColor: Colors.primary + '20',
   },
   categoryTagText: {
     fontSize: 10,
-    color: Colors.primary,
     fontWeight: '500',
   },
   tag: {
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 12,
-    backgroundColor: Colors.background,
   },
   tagText: {
     fontSize: 10,
-    color: Colors.textLight,
   },
   fileActions: {
     flexDirection: 'row',
@@ -543,7 +529,6 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: Colors.background,
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: 4,

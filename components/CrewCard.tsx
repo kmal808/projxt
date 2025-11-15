@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Crew } from '@/types';
 import Card from './ui/Card';
 import Avatar from './ui/Avatar';
-import Colors from '@/constants/colors';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { Briefcase } from 'lucide-react-native';
 
 interface CrewCardProps {
@@ -12,24 +12,26 @@ interface CrewCardProps {
 }
 
 export const CrewCard: React.FC<CrewCardProps> = ({ crew, onPress }) => {
+  const colors = useThemeColors();
+  
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
       <Card style={styles.card}>
         <View style={styles.header}>
-          <Text style={styles.title}>{crew.name}</Text>
-          <View style={styles.projectsContainer}>
-            <Briefcase size={14} color={Colors.textLight} />
-            <Text style={styles.projectsText}>
+          <Text style={[styles.title, { color: colors.text }]}>{crew.name}</Text>
+          <View style={[styles.projectsContainer, { backgroundColor: colors.background }]}>
+            <Briefcase size={14} color={colors.textLight} />
+            <Text style={[styles.projectsText, { color: colors.textLight }]}>
               {crew.projects.length} {crew.projects.length === 1 ? 'Project' : 'Projects'}
             </Text>
           </View>
         </View>
         
         <View style={styles.membersContainer}>
-          <Text style={styles.membersTitle}>Team Members</Text>
+          <Text style={[styles.membersTitle, { color: colors.textLight }]}>Team Members</Text>
           <View style={styles.avatarList}>
             {crew.members.slice(0, 3).map((member, index) => (
-              <View key={member.id} style={[styles.avatarContainer, { zIndex: 10 - index }]}>
+              <View key={member.id} style={[styles.avatarContainer, { zIndex: 10 - index, borderColor: colors.card }]}>
                 <Avatar 
                   name={member.name} 
                   size={32} 
@@ -39,8 +41,8 @@ export const CrewCard: React.FC<CrewCardProps> = ({ crew, onPress }) => {
             ))}
             
             {crew.members.length > 3 && (
-              <View style={styles.moreContainer}>
-                <Text style={styles.moreText}>+{crew.members.length - 3}</Text>
+              <View style={[styles.moreContainer, { backgroundColor: colors.background, borderColor: colors.card }]}>
+                <Text style={[styles.moreText, { color: colors.textLight }]}>+{crew.members.length - 3}</Text>
               </View>
             )}
           </View>
@@ -63,19 +65,16 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: Colors.text,
   },
   projectsContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.background,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
   },
   projectsText: {
     fontSize: 12,
-    color: Colors.textLight,
     marginLeft: 4,
   },
   membersContainer: {
@@ -83,7 +82,6 @@ const styles = StyleSheet.create({
   },
   membersTitle: {
     fontSize: 13,
-    color: Colors.textLight,
     marginBottom: 8,
   },
   avatarList: {
@@ -93,24 +91,20 @@ const styles = StyleSheet.create({
   avatarContainer: {
     marginRight: -8,
     borderWidth: 2,
-    borderColor: Colors.card,
     borderRadius: 16,
   },
   moreContainer: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: Colors.background,
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: 4,
     borderWidth: 2,
-    borderColor: Colors.card,
   },
   moreText: {
     fontSize: 10,
     fontWeight: 'bold',
-    color: Colors.textLight,
   },
 });
 
