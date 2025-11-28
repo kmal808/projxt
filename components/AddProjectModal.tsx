@@ -101,12 +101,36 @@ export default function AddProjectModal({ visible, onClose }: AddProjectModalPro
       
       await addProject(newProject);
       
+      const projectsStore = useProjectsStore.getState();
+      if (projectsStore.error) {
+        throw new Error(projectsStore.error);
+      }
+      
       resetForm();
       onClose();
       Alert.alert('Success', 'Project added successfully');
-    } catch (error) {
-      console.error('Error adding project:', error);
-      Alert.alert('Error', 'Failed to add project');
+    } catch (error: any) {
+      console.error('Add project error:', error);
+      const errorMessage = error?.message || 'Failed to add project';
+      
+      if (errorMessage.includes('company')) {
+        Alert.alert(
+          'No Company Found',
+          'You need to be part of a company to add projects. Please contact your administrator to be invited to a company, or create a new company in Settings.',
+          [
+            { text: 'OK', style: 'cancel' },
+            { 
+              text: 'Go to Settings',
+              onPress: () => {
+                onClose();
+                router.push('/(tabs)/settings');
+              }
+            }
+          ]
+        );
+      } else {
+        Alert.alert('Error', errorMessage);
+      }
     } finally {
       setIsSubmitting(false);
     }

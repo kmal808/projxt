@@ -121,6 +121,7 @@ export const useCrewsStore = create<CrewsState>()(
         } catch (error: any) {
           console.error('Add crew error:', error);
           set({ error: error.message || 'Failed to add crew', isLoading: false });
+          throw error;
         }
       },
       

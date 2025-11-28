@@ -119,6 +119,7 @@ export const useProjectsStore = create<ProjectsState>()(
         } catch (error: any) {
           console.error('Add project error:', error);
           set({ error: error.message || 'Failed to add project', isLoading: false });
+          throw error;
         }
       },
       

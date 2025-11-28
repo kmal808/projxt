@@ -77,12 +77,36 @@ export default function AddCrewModal({ visible, onClose }: AddCrewModalProps) {
       
       await addCrew(newCrew);
       
+      const crewsStore = useCrewsStore.getState();
+      if (crewsStore.error) {
+        throw new Error(crewsStore.error);
+      }
+      
       resetForm();
       onClose();
       Alert.alert('Success', 'Crew added successfully');
-    } catch (error) {
-      console.error('Error adding crew:', error);
-      Alert.alert('Error', 'Failed to add crew');
+    } catch (error: any) {
+      console.error('Add crew error:', error);
+      const errorMessage = error?.message || 'Failed to add crew';
+      
+      if (errorMessage.includes('company')) {
+        Alert.alert(
+          'No Company Found',
+          'You need to be part of a company to add crews. Please contact your administrator to be invited to a company, or create a new company in Settings.',
+          [
+            { text: 'OK', style: 'cancel' },
+            { 
+              text: 'Go to Settings',
+              onPress: () => {
+                onClose();
+                router.push('/(tabs)/settings');
+              }
+            }
+          ]
+        );
+      } else {
+        Alert.alert('Error', errorMessage);
+      }
     } finally {
       setIsSubmitting(false);
     }
