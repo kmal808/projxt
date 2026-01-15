@@ -154,7 +154,7 @@ export default function FilesScreen() {
         id: `file-${Date.now()}`,
         name: file.name,
         type: file.name.split('.').pop()?.toLowerCase() || 'unknown',
-        size: file.size,
+        size: file.size ?? 0,
         uri: file.uri,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),

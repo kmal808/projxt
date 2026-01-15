@@ -79,7 +79,7 @@ export default function LoginScreen() {
               <View style={[styles.featureIcon, { backgroundColor: Colors.secondary + '20' }]}>
                 <BarChart3 size={20} color={Colors.secondary} />
               </View>
-              <Text style={styles.featureText}>Payroll & Reporting</Text>
+              <Text style={styles.featureText}>Payroll and Reporting</Text>
             </View>
           </View>
         </View>

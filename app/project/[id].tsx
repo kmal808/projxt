@@ -21,14 +21,12 @@ import {
   MapPin, 
   DollarSign, 
   Users, 
-  ClipboardList, 
   Edit2, 
   Trash2,
   Plus,
   CheckCircle,
   Clock,
   AlertCircle,
-  Download,
   ExternalLink,
   FileText,
   Mail,
@@ -206,7 +204,7 @@ export default function ProjectDetailsScreen() {
         <View style={styles.errorContainer}>
           <AlertCircle size={48} color={Colors.danger} />
           <Text style={styles.errorTitle}>Project Not Found</Text>
-          <Text style={styles.errorMessage}>The project you're looking for doesn't exist or has been deleted.</Text>
+          <Text style={styles.errorMessage}>The project you are looking for does not exist or has been deleted.</Text>
           <Button 
             title="Go Back" 
             onPress={() => router.back()} 
@@ -349,7 +347,7 @@ export default function ProjectDetailsScreen() {
                             <Avatar 
                               name={member.name} 
                               size={28} 
-                              imageUrl={member.avatar}
+                              uri={member.avatar}
                             />
                           </View>
                         ))}

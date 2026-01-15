@@ -35,7 +35,7 @@ export const CrewCard: React.FC<CrewCardProps> = ({ crew, onPress }) => {
                 <Avatar 
                   name={member.name} 
                   size={32} 
-                  imageUrl={member.avatar}
+                  uri={member.avatar}
                 />
               </View>
             ))}

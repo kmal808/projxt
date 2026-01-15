@@ -18,7 +18,9 @@ import Colors from '@/constants/colors';
 import { useInventoryStore } from '@/store/inventory-store';
 import { useProjectsStore } from '@/store/projects-store';
 import { useAuthStore } from '@/store/auth-store';
-import { InventoryItem, ProductType } from '@/types';
+import { InventoryItem } from '@/types';
+
+type ProductType = 'windows' | 'siding' | 'entry_doors' | 'security_doors' | 'other';
 
 interface AddInventoryModalProps {
   visible: boolean;
@@ -50,7 +52,7 @@ export default function AddInventoryModal({ visible, onClose, editItem }: AddInv
     jobName: editItem.jobName,
     jobNumber: editItem.jobNumber,
     manufacturerOrderNumber: editItem.manufacturerOrderNumber,
-    itemType: editItem.itemType,
+    itemType: (editItem.itemType as ProductType) || 'windows',
     quantity: editItem.quantity.toString(),
     notes: editItem.notes || '',
   } : {
@@ -111,8 +113,11 @@ export default function AddInventoryModal({ visible, onClose, editItem }: AddInv
       const now = new Date().toISOString();
       addItem({
         ...formData,
+        name: formData.jobName,
+        category: formData.itemType,
+        unit: 'pcs',
+        location: '',
         quantity: Number(formData.quantity),
-        addedBy: user?.id || 'unknown',
         dateAdded: now
       });
     }

@@ -12,10 +12,9 @@ export default function TabLayout() {
   const theme = isDarkMode ? Colors.dark : Colors;
   
   const isAdmin = user?.role === 'admin';
-  const isManager = user?.role === 'manager';
-  const isField = user?.role === 'field';
-  const isOffice = user?.role === 'office';
-  const isSales = user?.role === 'sales';
+  const isProjectManager = user?.role === 'project_manager';
+  const isCrewLeader = user?.role === 'crew_leader';
+  const isWorker = user?.role === 'worker';
 
   return (
     <Tabs
@@ -47,7 +46,7 @@ export default function TabLayout() {
         }}
       />
       
-      {(isAdmin || isManager || !user) && (
+      {(isAdmin || isProjectManager || !user) && (
         <Tabs.Screen
           name="projects"
           options={{
@@ -57,7 +56,7 @@ export default function TabLayout() {
         />
       )}
       
-      {(isAdmin || isManager || !user) && (
+      {(isAdmin || isProjectManager || !user) && (
         <Tabs.Screen
           name="crews"
           options={{
@@ -67,7 +66,7 @@ export default function TabLayout() {
         />
       )}
       
-      {(isAdmin || isOffice || !user) && (
+      {(isAdmin || isProjectManager || isCrewLeader || !user) && (
         <Tabs.Screen
           name="files"
           options={{
@@ -77,7 +76,7 @@ export default function TabLayout() {
         />
       )}
       
-      {(isField || isOffice || !user) && (
+      {(isAdmin || isProjectManager || isCrewLeader || isWorker || !user) && (
         <Tabs.Screen
           name="inventory"
           options={{

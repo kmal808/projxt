@@ -73,7 +73,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ visible, onClose })
         });
         Alert.alert('Success', 'Profile updated successfully');
         onClose();
-      } catch (error) {
+      } catch {
         Alert.alert('Error', 'Failed to update profile');
       }
     }
@@ -104,7 +104,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ visible, onClose })
                 <Avatar
                   name={formData.name}
                   size={80}
-                  imageUrl={formData.avatar}
+                  uri={formData.avatar}
                 />
                 <TouchableOpacity style={styles.changeAvatarButton}>
                   <Text style={styles.changeAvatarText}>Change Photo</Text>

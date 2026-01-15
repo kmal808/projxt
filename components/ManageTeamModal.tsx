@@ -84,7 +84,7 @@ export default function ManageTeamModal({ visible, onClose, crew, onAddMember }:
           <Avatar 
             name={item.name} 
             size={40} 
-            imageUrl={item.avatar}
+            uri={item.avatar}
           />
           <View style={styles.memberDetails}>
             <Text style={styles.memberName}>{item.name}</Text>

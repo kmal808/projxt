@@ -7,7 +7,7 @@ import Avatar from '@/components/ui/Avatar';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Colors from '@/constants/colors';
-import { Mail, Phone, MapPin, Briefcase, Calendar, Edit2, Camera, Users } from 'lucide-react-native';
+import { Mail, Phone, MapPin, Briefcase, Calendar, Edit2, Camera } from 'lucide-react-native';
 
 export default function ProfileScreen() {
   const { user } = useAuthStore();
@@ -39,7 +39,7 @@ export default function ProfileScreen() {
             <Avatar 
               name={userName} 
               size={100} 
-              imageUrl={user?.avatar}
+              uri={user?.avatar}
             />
             <TouchableOpacity style={styles.cameraButton}>
               <Camera size={16} color="#FFFFFF" />
@@ -108,27 +108,15 @@ export default function ProfileScreen() {
               <Text style={styles.infoLabel}>Department</Text>
               <Text style={styles.infoValue}>
                 {user?.role === 'admin' ? 'Administration' : 
-                 user?.role === 'manager' ? 'Project Management' :
-                 user?.role === 'field' ? 'Field Operations' :
-                 user?.role === 'office' ? 'Office Administration' :
-                 'Sales'}
+                 user?.role === 'project_manager' ? 'Project Management' :
+                 user?.role === 'crew_leader' ? 'Crew Leadership' :
+                 user?.role === 'worker' ? 'Field Operations' :
+                 'Unknown'}
               </Text>
             </View>
           </View>
           
-          {user?.crewId && (
-            <View style={styles.infoItem}>
-              <Users size={18} color={Colors.textLight} style={styles.infoIcon} />
-              <View>
-                <Text style={styles.infoLabel}>Crew</Text>
-                <Text style={styles.infoValue}>
-                  {user.crewId === 'crew1' ? 'Alpha Team' : 
-                   user.crewId === 'crew2' ? 'Beta Team' : 
-                   'Gamma Team'}
-                </Text>
-              </View>
-            </View>
-          )}
+          
           
           <View style={styles.infoItem}>
             <Calendar size={18} color={Colors.textLight} style={styles.infoIcon} />
@@ -144,11 +132,13 @@ export default function ProfileScreen() {
             title="Change Password"
             variant="outline"
             style={styles.actionButton}
+            onPress={() => {}}
           />
           
           <Button
             title="Update Profile"
             style={styles.actionButton}
+            onPress={() => {}}
           />
         </View>
       </ScrollView>

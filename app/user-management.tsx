@@ -40,7 +40,7 @@ export default function UserManagementScreen() {
           id: '2',
           name: 'Project Manager',
           email: 'manager@projxt.com',
-          role: 'manager',
+          role: 'project_manager',
           isEmailVerified: true,
           createdAt: new Date().toISOString()
         },
@@ -48,7 +48,7 @@ export default function UserManagementScreen() {
           id: '3',
           name: 'Field Worker',
           email: 'field@projxt.com',
-          role: 'field',
+          role: 'worker',
           isEmailVerified: true,
           createdAt: new Date().toISOString()
         }
@@ -112,34 +112,26 @@ export default function UserManagementScreen() {
           },
         },
         {
-          text: 'Manager',
+          text: 'Project Manager',
           onPress: () => {
             setUsers(users.map(user => 
-              user.id === userId ? { ...user, role: 'manager' } : user
+              user.id === userId ? { ...user, role: 'project_manager' } : user
             ));
           },
         },
         {
-          text: 'Field',
+          text: 'Crew Leader',
           onPress: () => {
             setUsers(users.map(user => 
-              user.id === userId ? { ...user, role: 'field' } : user
+              user.id === userId ? { ...user, role: 'crew_leader' } : user
             ));
           },
         },
         {
-          text: 'Office',
+          text: 'Worker',
           onPress: () => {
             setUsers(users.map(user => 
-              user.id === userId ? { ...user, role: 'office' } : user
-            ));
-          },
-        },
-        {
-          text: 'Sales',
-          onPress: () => {
-            setUsers(users.map(user => 
-              user.id === userId ? { ...user, role: 'sales' } : user
+              user.id === userId ? { ...user, role: 'worker' } : user
             ));
           },
         },

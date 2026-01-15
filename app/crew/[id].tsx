@@ -152,7 +152,7 @@ export default function CrewDetailsScreen() {
         <View style={styles.errorContainer}>
           <AlertCircle size={48} color={Colors.danger} />
           <Text style={styles.errorTitle}>Crew Not Found</Text>
-          <Text style={styles.errorMessage}>The crew you're looking for doesn't exist or has been deleted.</Text>
+          <Text style={styles.errorMessage}>The crew you are looking for does not exist or has been deleted.</Text>
           <Button 
             title="Go Back" 
             onPress={() => router.back()} 
@@ -236,7 +236,7 @@ export default function CrewDetailsScreen() {
                   <Avatar 
                     name={member.name} 
                     size={50} 
-                    imageUrl={member.avatar}
+                    uri={member.avatar}
                   />
                   <View style={styles.memberInfo}>
                     <Text style={styles.memberName}>{member.name}</Text>

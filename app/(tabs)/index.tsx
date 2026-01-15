@@ -157,7 +157,7 @@ export default function DashboardScreen() {
         )}
         
         {/* Crews */}
-        {(user?.role === 'admin' || user?.role === 'manager') && (
+        {(user?.role === 'admin' || user?.role === 'project_manager') && (
           <>
             <View style={styles.sectionHeader}>
               <Text style={[styles.sectionTitle, { color: colors.text }]}>Crews</Text>

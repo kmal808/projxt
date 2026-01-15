@@ -11,7 +11,7 @@ import { useSubscriptionStore } from "@/store/subscription-store";
 import { ErrorBoundary } from "./error-boundary";
 
 export const unstable_settings = {
-  initialRouteName: "index",
+  initialRouteName: "login",
 };
 
 const queryClient = new QueryClient();
@@ -27,7 +27,7 @@ export default function RootLayout() {
     ...FontAwesome.font,
   });
   
-  const { mode, isDarkMode } = useThemeStore();
+  useThemeStore();
   const { connect, disconnect } = useSubscriptionStore();
   
   useEffect(() => {
@@ -89,7 +89,7 @@ function RootLayoutNav() {
         headerShown: false,
       }}
     >
-      <Stack.Screen name="index" options={{ headerShown: false }} />
+      <Stack.Screen name="login" options={{ headerShown: false }} />
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="profile" options={{ headerShown: true, title: "Profile" }} />
       <Stack.Screen name="project/[id]" options={{ headerShown: true, title: "Project Details" }} />

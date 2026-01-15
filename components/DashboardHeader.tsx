@@ -34,7 +34,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
           <Avatar 
             name={user?.name || 'User'} 
             size={40} 
-            imageUrl={user?.avatar}
+            uri={user?.avatar}
           />
         </TouchableOpacity>
         

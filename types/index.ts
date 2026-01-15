@@ -77,6 +77,12 @@ export interface InventoryItem {
   minQuantity?: number;
   cost?: number;
   supplier?: string;
+  jobName: string;
+  jobNumber: string;
+  itemType: string;
+  manufacturerOrderNumber: string;
+  notes?: string;
+  dateAdded: string;
 }
 
 // File types
