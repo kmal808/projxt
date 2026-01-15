@@ -8,7 +8,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useThemeStore } from "@/store/theme-store";
 import { useSubscriptionStore } from "@/store/subscription-store";
 
-import { ErrorBoundary } from "./error-boundary";
+
 
 export const unstable_settings = {
   initialRouteName: "login",
@@ -74,11 +74,11 @@ export default function RootLayout() {
   console.log('RootLayout: Rendering main app');
 
   return (
-    <ErrorBoundary>
+    
       <QueryClientProvider client={queryClient}>
         <RootLayoutNav />
       </QueryClientProvider>
-    </ErrorBoundary>
+    
   );
 }
 

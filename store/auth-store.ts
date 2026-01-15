@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { authService, type AuthUser } from '@/lib/auth';
+import { authService } from '@/lib/auth';
 
 export interface User {
   id: string;
@@ -48,6 +48,9 @@ interface AuthState {
   
   // Invitation methods
   inviteUser: (email: string, role: User['role']) => Promise<string>;
+  
+  // Session restoration
+  initializeSession: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -267,6 +270,46 @@ export const useAuthStore = create<AuthState>()(
           throw error;
         }
       },
+      
+      initializeSession: async () => {
+        try {
+          console.log('Auth store: Checking for existing session');
+          const userProfile = await authService.getCurrentUser();
+          
+          if (userProfile) {
+            console.log('Auth store: Session found, restoring user');
+            const session = await authService.getSession();
+            
+            set({ 
+              user: {
+                id: userProfile.id,
+                name: userProfile.full_name || 'User',
+                email: userProfile.email,
+                role: userProfile.role,
+                avatar: userProfile.avatar_url || undefined,
+                isEmailVerified: true,
+                createdAt: userProfile.created_at
+              }, 
+              token: session?.access_token || null, 
+              isAuthenticated: true
+            });
+          } else {
+            console.log('Auth store: No session found');
+            set({ 
+              user: null, 
+              token: null, 
+              isAuthenticated: false 
+            });
+          }
+        } catch (error) {
+          console.error('Auth store: Session initialization failed:', error);
+          set({ 
+            user: null, 
+            token: null, 
+            isAuthenticated: false 
+          });
+        }
+      },
     };
     },
     {
@@ -274,11 +317,13 @@ export const useAuthStore = create<AuthState>()(
       storage: createJSONStorage(() => AsyncStorage),
       onRehydrateStorage: () => {
         console.log('Auth store: Starting rehydration');
-        return (state, error) => {
+        return async (state, error) => {
           if (error) {
             console.error('Auth store: Rehydration failed', error);
           } else {
-            console.log('Auth store: Rehydration complete');
+            console.log('Auth store: Rehydration complete, initializing session');
+            const store = useAuthStore.getState();
+            await store.initializeSession();
           }
         };
       },
